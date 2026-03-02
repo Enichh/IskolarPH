@@ -1,0 +1,40 @@
+<resources>
+    <string name="app_name">STIsdUI</string>
+
+    <string name="sos_description">
+        The STI Open Scholarship (SOS) program gives full or partial scholarships
+        to students who do well in school. It helps them and their families pay
+        for senior high or college at any STI College campus in the country.
+    </string>
+
+    <string name="scholarship_details">
+        • &lt;b&gt;Programs&lt;/b&gt;&lt;br/&gt;
+            – Full or partial tuition fee coverage.&lt;br/&gt;&lt;br/&gt;
+
+        • &lt;b&gt;Eligibility&lt;/b&gt;&lt;br/&gt;
+            – Grade 10 completers and Grade 12 graduates from any DepEd-recognized school.&lt;br/&gt;&lt;br/&gt;
+
+        • &lt;b&gt;Requirements&lt;/b&gt;&lt;br/&gt;
+            – Pass the STI Open Scholarship Exam.&lt;br/&gt;&lt;br/&gt;
+
+        • &lt;b&gt;Application&lt;/b&gt;&lt;br/&gt;
+            – Register for free at https://openscholarship.sti.edu.&lt;br/&gt;&lt;br/&gt;
+
+        • &lt;b&gt;Other Grants&lt;/b&gt;&lt;br/&gt;
+            ○ &lt;b&gt;STI Alumni Scholarship:&lt;/b&gt; Up to 50% tuition fee subsidy.&lt;br/&gt;
+            ○ &lt;b&gt;Pag-IBIG Loyalty Cardholder:&lt;/b&gt; 10% tuition fee subsidy.
+    </string>
+
+    <string name="important_notes">
+        • Scholarships are non-transferable and apply only to the campus where the exam was taken.&lt;br/&gt;
+        • Applicants must have no record of misconduct.&lt;br/&gt;
+        • &lt;b&gt;Slots are limited.&lt;/b&gt;
+    </string>
+
+    <string name="header_scholarship_program">STI Open Scholarship (SOS)</string>
+    <string name="title_scholarship_details">SCHOLARSHIP DETAILS</string>
+    <string name="title_important_notes">IMPORTANT NOTES</string>
+
+    <string name="menu_details">Details</string>
+    <string name="details">Details</string>
+</resources>
