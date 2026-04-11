@@ -8,23 +8,27 @@ import java.util.List;
 @Dao
 public interface StudentDao {
 
-    // CREATE
+    // CREATE - returns the new row id
     @Insert
-    void insert(Student student);
+    long insert(Student student);
 
     // READ (ALL)
     @Query("SELECT * FROM students")
     LiveData<List<Student>> getAllStudents();
 
-    // READ (SINGLE)
+    // READ (BY EMAIL)
     @Query("SELECT * FROM students WHERE email = :email LIMIT 1")
     LiveData<Student> getStudentByEmail(String email);
 
-    // UPDATE
-    @Update
-    void update(Student student);
+    // READ (BY FIREBASE UID)
+    @Query("SELECT * FROM students WHERE firebase_uid = :firebaseUid LIMIT 1")
+    LiveData<Student> getStudentByFirebaseUid(String firebaseUid);
 
-    // DELETE
+    // UPDATE - returns number of rows updated
+    @Update
+    int update(Student student);
+
+    // DELETE - returns number of rows deleted
     @Delete
-    void delete(Student student);
+    int delete(Student student);
 }

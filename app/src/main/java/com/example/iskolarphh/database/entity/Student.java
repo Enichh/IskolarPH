@@ -12,6 +12,9 @@ public class Student {
     @PrimaryKey(autoGenerate = true)
     private int id;
 
+    @ColumnInfo(name = "firebase_uid")
+    private String firebaseUid;
+
     @ColumnInfo(name = "first_name")
     private String firstName;
 
@@ -36,7 +39,10 @@ public class Student {
     // Constructors
     public Student() {}
 
-    public Student(String firstName, String lastName, String middleInitial, String location, String email, String password, double gpa) {
+    // Constructor for initial registration with Firebase
+    public Student(String firebaseUid, String firstName, String lastName, String middleInitial, 
+                   String location, String email, String password, double gpa) {
+        this.firebaseUid = firebaseUid;
         this.firstName = firstName;
         this.lastName = lastName;
         this.middleInitial = middleInitial;
@@ -46,9 +52,23 @@ public class Student {
         this.gpa = gpa;
     }
 
+    // Constructor for Firebase registration (used by SignupActivity)
+    public Student(String firebaseUid, String firstName, String lastName, String middleInitial, 
+                   String location, double gpa) {
+        this.firebaseUid = firebaseUid;
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.middleInitial = middleInitial;
+        this.location = location;
+        this.gpa = gpa;
+    }
+
 
     public int getId() { return id; }
     public void setId(int id) { this.id = id; }
+
+    public String getFirebaseUid() { return firebaseUid; }
+    public void setFirebaseUid(String firebaseUid) { this.firebaseUid = firebaseUid; }
 
     public String getFirstName() { return firstName; }
     public void setFirstName(String firstName) { this.firstName = firstName; }

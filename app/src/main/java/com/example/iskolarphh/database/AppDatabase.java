@@ -10,7 +10,7 @@ import com.example.iskolarphh.database.entity.Student;
 import com.example.iskolarphh.database.dao.ScholarshipDao;
 import com.example.iskolarphh.database.entity.Scholarship;
 
-@Database(entities = { Student.class, Scholarship.class }, version = 1, exportSchema = false)
+@Database(entities = { Student.class, Scholarship.class }, version = 2, exportSchema = false)
 public abstract class AppDatabase extends RoomDatabase {
 
     private static volatile AppDatabase INSTANCE;
@@ -26,7 +26,9 @@ public abstract class AppDatabase extends RoomDatabase {
                     INSTANCE = Room.databaseBuilder(
                             context.getApplicationContext(),
                             AppDatabase.class,
-                            "iskolarphh_database").build();
+                            "iskolarphh_database")
+                            .fallbackToDestructiveMigration() // Recreate DB on version change
+                            .build();
                 }
             }
         }
