@@ -15,6 +15,8 @@ import com.example.iskolarphh.ui.CatalogFragment;
 import com.example.iskolarphh.ui.DashboardFragment;
 import com.example.iskolarphh.ui.ProfileFragment;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.example.iskolarphh.ui.ChatbotDialog;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -27,7 +29,11 @@ public class MainActivity extends AppCompatActivity {
         BottomNavigationView bottomNav = findViewById(R.id.bottom_navigation);
         bottomNav.setOnNavigationItemSelectedListener(navListener);
 
-
+        FloatingActionButton fabChat = findViewById(R.id.fabChat);
+        fabChat.setOnClickListener(v -> {
+            ChatbotDialog dialog = new ChatbotDialog();
+            dialog.show(getSupportFragmentManager(), "ChatbotDialog");
+        });
     }
 
     private BottomNavigationView.OnNavigationItemSelectedListener navListener = new BottomNavigationView.OnNavigationItemSelectedListener() {
