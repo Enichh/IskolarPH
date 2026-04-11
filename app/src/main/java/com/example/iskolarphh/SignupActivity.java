@@ -123,7 +123,7 @@ public class SignupActivity extends AppCompatActivity {
                             student.setPassword(password);
 
                             // Save to Room database with callback
-                            studentRepository.insert(student, () -> {
+                            studentRepository.insert(student, id -> {
                                 // Run on UI thread
                                 new Handler(Looper.getMainLooper()).post(() -> {
                                     btnSignup.setEnabled(true);
