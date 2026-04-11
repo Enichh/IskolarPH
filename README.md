@@ -16,6 +16,7 @@ Many Filipino students struggle to find scholarships that match their qualificat
 ### Solution
 
 ISKOLARPH simplifies this process by providing a mobile application that:
+
 - Collects student's Grade Weighted Average (GWA) and location
 - Matches students with scholarships they qualify for
 - Provides a user-friendly interface to browse and apply for scholarships
@@ -155,12 +156,9 @@ We welcome contributions! To contribute:
 
 ## Contributors
 
-### Main Authors
 - **James Viray**
 - **Jason Villareal**
 - **Krizia Mae Oliva**
-
-### Contributors
 - **Jayron Mina**
 - **Enoch Astor**
 - **Andre Victorino**
