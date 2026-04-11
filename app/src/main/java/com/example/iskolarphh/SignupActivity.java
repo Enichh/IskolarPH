@@ -116,7 +116,7 @@ public class SignupActivity extends AppCompatActivity {
                                     "", // location - will be filled later
                                     0.0  // gpa - will be filled later
                             );
-                            
+
                             // Set email for local database
                             student.setEmail(email);
                             // Store password hash for local authentication fallback
@@ -127,10 +127,10 @@ public class SignupActivity extends AppCompatActivity {
                                 // Run on UI thread
                                 new Handler(Looper.getMainLooper()).post(() -> {
                                     btnSignup.setEnabled(true);
-                                    Toast.makeText(SignupActivity.this, 
-                                            "Account created successfully!", 
+                                    Toast.makeText(SignupActivity.this,
+                                            "Account created! Please verify your email.",
                                             Toast.LENGTH_SHORT).show();
-                                    navigateToMain();
+                                    navigateToEmailVerification();
                                 });
                             });
                         }
@@ -158,7 +158,7 @@ public class SignupActivity extends AppCompatActivity {
                     }
                 });
     }
-    
+
     /**
      * Parse full name into first name, middle initial, and last name
      * Handles various formats: "John Doe", "John M Doe", "John Michael Doe"
@@ -170,13 +170,13 @@ public class SignupActivity extends AppCompatActivity {
         result[0] = ""; // firstName
         result[1] = ""; // middleInitial
         result[2] = ""; // lastName
-        
+
         if (fullName == null || fullName.trim().isEmpty()) {
             return result;
         }
-        
+
         String[] parts = fullName.trim().split("\\s+");
-        
+
         if (parts.length == 1) {
             // Only first name
             result[0] = parts[0];
@@ -191,8 +191,15 @@ public class SignupActivity extends AppCompatActivity {
             // Middle initial from the first middle name
             result[1] = String.valueOf(parts[1].charAt(0));
         }
-        
+
         return result;
+    }
+
+    private void navigateToEmailVerification() {
+        Intent intent = new Intent(SignupActivity.this, EmailVerificationActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        startActivity(intent);
+        finish();
     }
 
     private void navigateToMain() {

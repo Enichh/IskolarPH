@@ -3,6 +3,7 @@ package com.example.iskolarphh;
 import android.content.Intent;
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.util.Log;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -14,6 +15,7 @@ import com.google.firebase.auth.FirebaseUser;
 
 public class LoginActivity extends AppCompatActivity {
 
+    private static final String TAG = "LoginActivity";
     private FirebaseAuth mAuth;
     private TextInputEditText etEmail;
     private TextInputEditText etPassword;
@@ -48,7 +50,13 @@ public class LoginActivity extends AppCompatActivity {
         super.onStart();
         FirebaseUser currentUser = mAuth.getCurrentUser();
         if (currentUser != null) {
-            navigateToMain();
+            // Check if email is verified before navigating to main
+            if (currentUser.isEmailVerified()) {
+                navigateToMain();
+            } else {
+                // Redirect to email verification
+                navigateToEmailVerification();
+            }
         }
     }
 
@@ -78,8 +86,20 @@ public class LoginActivity extends AppCompatActivity {
                     btnLogin.setEnabled(true);
                     if (task.isSuccessful()) {
                         FirebaseUser user = mAuth.getCurrentUser();
-                        Toast.makeText(LoginActivity.this, "Login successful", Toast.LENGTH_SHORT).show();
-                        navigateToMain();
+                        if (user != null) {
+                            // Check email verification status
+                            if (user.isEmailVerified()) {
+                                Log.d(TAG, "User email is verified");
+                                Toast.makeText(LoginActivity.this, "Login successful", Toast.LENGTH_SHORT).show();
+                                navigateToMain();
+                            } else {
+                                Log.d(TAG, "User email is not verified");
+                                Toast.makeText(LoginActivity.this, 
+                                        "Please verify your email before logging in", 
+                                        Toast.LENGTH_LONG).show();
+                                navigateToEmailVerification();
+                            }
+                        }
                     } else {
                         String errorMessage = "Authentication failed";
                         if (task.getException() != null) {
@@ -121,6 +141,13 @@ public class LoginActivity extends AppCompatActivity {
                                 Toast.LENGTH_LONG).show();
                     }
                 });
+    }
+
+    private void navigateToEmailVerification() {
+        Intent intent = new Intent(LoginActivity.this, EmailVerificationActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        startActivity(intent);
+        finish();
     }
 
     private void navigateToMain() {
