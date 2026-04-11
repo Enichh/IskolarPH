@@ -1,5 +1,6 @@
 plugins {
     alias(libs.plugins.android.application)
+    id("com.google.gms.google-services")
 }
 
 android {
@@ -56,4 +57,8 @@ dependencies {
     androidTestImplementation(libs.ext.junit)
     annotationProcessor(libs.androidx.room.compiler)
     androidTestImplementation(libs.espresso.core)
+    
+    // Firebase
+    implementation(platform("com.google.firebase:firebase-bom:32.7.0"))
+    implementation("com.google.firebase:firebase-auth")
 }
