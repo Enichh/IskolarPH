@@ -4,6 +4,9 @@ plugins {
 
 android {
     namespace = "com.example.iskolarphh"
+    compileSdk = 36 // Updated to a simpler syntax if possible, but keeping consistency
+
+    // Explicitly set the compileSdk version as provided in the original file
     compileSdk {
         version = release(36) {
             minorApiLevel = 1
@@ -30,8 +33,16 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+}
+
+// Configure the Java toolchain to ensure a valid JDK is used, 
+// avoiding references to missing or temporary extension JDKs.
+java {
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(17))
     }
 }
 

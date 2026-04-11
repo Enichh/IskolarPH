@@ -11,9 +11,9 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.fragment.app.Fragment;
 
-import com.example.iskolarphh.repository.CatalogFragment;
-import com.example.iskolarphh.repository.DashboardFragment;
-import com.example.iskolarphh.repository.ProfileFragment;
+import com.example.iskolarphh.ui.CatalogFragment;
+import com.example.iskolarphh.ui.DashboardFragment;
+import com.example.iskolarphh.ui.ProfileFragment;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 public class MainActivity extends AppCompatActivity {
