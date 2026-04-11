@@ -3,7 +3,6 @@
 ![GitHub stars](https://img.shields.io/github/stars/Enichh/ISKOLARPH?style=for-the-badge)
 ![GitHub forks](https://img.shields.io/github/forks/Enichh/ISKOLARPH?style=for-the-badge)
 ![GitHub issues](https://img.shields.io/github/issues/Enichh/ISKOLARPH?style=for-the-badge)
-![GitHub license](https://img.shields.io/github/license/Enichh/ISKOLARPH?style=for-the-badge)
 
 ## About
 
@@ -28,9 +27,11 @@ ISKOLARPH simplifies this process by providing a mobile application that:
 - **Email Verification**: Mandatory email verification to ensure account security
 - **Profile Management**: Students can input their GWA and location for scholarship matching
 - **Scholarship Catalog**: Browse available scholarships filtered by eligibility
+- **AI Chatbot Assistant**: Built-in AI assistant powered by LongCat API for scholarship guidance, application tips, and study advice
 - **Material Design 3**: Modern, intuitive UI with dark mode support
 - **Offline Data Storage**: Room Database for local data persistence
 - **Real-time Updates**: LiveData for reactive UI updates
+- **Scholarship Details**: Detailed view of scholarship programs with eligibility and application information
 
 ## Tech Stack
 
@@ -40,8 +41,10 @@ ISKOLARPH simplifies this process by providing a mobile application that:
 - **Database**: Room (SQLite) with LiveData
 - **Authentication**: Firebase Auth with Email Verification
 - **UI**: Material Design 3 with Bottom Navigation
+- **AI Integration**: Retrofit + LongCat API for chatbot functionality
 - **Build System**: Gradle with Kotlin DSL
 - **Firebase**: BOM 32.7.0, Firebase Auth
+- **Networking**: Retrofit 2.9.0, OkHttp Logging Interceptor
 
 ## Prerequisites
 
@@ -66,15 +69,7 @@ cd ISKOLARPH
 
 Open the project folder in Android Studio and wait for Gradle sync to complete.
 
-### 3. Firebase Setup
-
-1. Create a Firebase project at [https://console.firebase.google.com/](https://console.firebase.google.com/)
-2. Add an Android app with package name: `com.example.iskolarphh`
-3. Download `google-services.json` and place it in the `app/` directory
-4. Enable Firebase Authentication in the Firebase Console
-5. Enable Email/Password sign-in method
-
-### 4. Build and Run
+### 3. Build and Run
 
 ```bash
 # Build the project
@@ -112,6 +107,16 @@ Or use Android Studio's Run button (▶️) to build and install the app.
 3. Tap on any scholarship to view details
 4. Follow the application link to apply
 
+### AI Chatbot Assistant
+
+1. Tap the floating chat button (or access via Dashboard)
+2. Ask questions about scholarships, application tips, essay writing, or study advice
+3. The AI assistant provides guidance on educational topics
+4. Chat history is maintained for the current session
+5. Maximum 20 messages per conversation; resets automatically
+
+**Note:** The AI assistant focuses on educational and scholarship topics. It will not store personal information and will redirect off-topic questions appropriately.
+
 ### Profile Management
 
 1. Navigate to the Profile tab
@@ -126,6 +131,13 @@ app/src/main/java/com/example/iskolarphh/
 ├── SignupActivity.java            # Firebase registration with Room persistence
 ├── LoginActivity.java             # Firebase authentication
 ├── EmailVerificationActivity.java # Email verification screen
+├── api/                           # API layer
+│   ├── LongcatApiService.java     # AI chatbot API interface
+│   └── RetrofitClient.java        # Retrofit configuration
+├── model/                         # Data models for API
+│   ├── ChatMessage.java           # Chat message model
+│   ├── LongcatRequest.java        # AI API request model
+│   └── LongcatResponse.java       # AI API response model
 ├── repository/                    # Data access layer
 │   ├── StudentRepository.java     # Student data operations
 │   └── ScholarshipRepository.java # Scholarship data operations
@@ -140,19 +152,11 @@ app/src/main/java/com/example/iskolarphh/
 │       └── ScholarshipDao.java
 └── ui/                            # Fragment-based UI components
     ├── CatalogFragment.java       # Scholarship listing
+    ├── ChatbotDialog.java         # AI chatbot dialog
     ├── DashboardFragment.java     # Home dashboard
+    ├── MessageAdapter.java        # Chat message adapter
     └── ProfileFragment.java       # User profile
 ```
-
-## Contributing
-
-We welcome contributions! To contribute:
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
 
 ## Contributors
 
@@ -162,17 +166,6 @@ We welcome contributions! To contribute:
 - **Jayron Mina**
 - **Enoch Astor**
 - **Andre Victorino**
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## Acknowledgments
-
-- [Firebase](https://firebase.google.com/) for authentication services
-- [Android Developers](https://developer.android.com/) for comprehensive documentation
-- [Material Design](https://m3.material.io/) for design guidelines
-- [Room Persistence Library](https://developer.android.com/training/data-storage/room) for database solution
 
 ## Contact
 
