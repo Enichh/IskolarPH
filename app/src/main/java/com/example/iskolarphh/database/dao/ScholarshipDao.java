@@ -1,5 +1,6 @@
 package com.example.iskolarphh.database.dao;
 
+import androidx.lifecycle.LiveData;
 import androidx.room.*;
 import com.example.iskolarphh.database.entity.Scholarship;
 import java.util.List;
@@ -7,23 +8,23 @@ import java.util.List;
 @Dao
 public interface ScholarshipDao {
 
-    //CREATE
+    // CREATE
     @Insert
     void insert(Scholarship scholarship);
 
-    //READ (ALL)
+    // READ (ALL)
     @Query("SELECT * FROM scholarships")
-    List<Scholarship> getAllScholarships();
+    LiveData<List<Scholarship>> getAllScholarships();
 
-    //READ (SINGLE)
+    // READ (SINGLE)
     @Query("SELECT * FROM scholarships WHERE id = :id LIMIT 1")
-    Scholarship getScholarshipById(int id);
+    LiveData<Scholarship> getScholarshipById(int id);
 
-    //UPDATE
+    // UPDATE
     @Update
     void update(Scholarship scholarship);
 
-    //DELETE
+    // DELETE
     @Delete
     void delete(Scholarship scholarship);
 }

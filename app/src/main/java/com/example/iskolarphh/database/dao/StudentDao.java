@@ -1,5 +1,6 @@
 package com.example.iskolarphh.database.dao;
 
+import androidx.lifecycle.LiveData;
 import androidx.room.*;
 import com.example.iskolarphh.database.entity.Student;
 import java.util.List;
@@ -7,23 +8,23 @@ import java.util.List;
 @Dao
 public interface StudentDao {
 
-    //CREATE
+    // CREATE
     @Insert
     void insert(Student student);
 
-    //READ (ALL)
+    // READ (ALL)
     @Query("SELECT * FROM students")
-    List<Student> getAllStudents();
+    LiveData<List<Student>> getAllStudents();
 
-    //READ (SINGLE)
+    // READ (SINGLE)
     @Query("SELECT * FROM students WHERE email = :email LIMIT 1")
-    Student getStudentByEmail(String email);
+    LiveData<Student> getStudentByEmail(String email);
 
-    //UPDATE
+    // UPDATE
     @Update
     void update(Student student);
 
-    //DELETE
+    // DELETE
     @Delete
     void delete(Student student);
 }

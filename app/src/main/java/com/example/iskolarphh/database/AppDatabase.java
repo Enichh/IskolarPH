@@ -7,13 +7,17 @@ import androidx.room.RoomDatabase;
 
 import com.example.iskolarphh.database.dao.StudentDao;
 import com.example.iskolarphh.database.entity.Student;
+import com.example.iskolarphh.database.dao.ScholarshipDao;
+import com.example.iskolarphh.database.entity.Scholarship;
 
-@Database(entities = {Student.class}, version = 1, exportSchema = false)
+@Database(entities = { Student.class, Scholarship.class }, version = 1, exportSchema = false)
 public abstract class AppDatabase extends RoomDatabase {
 
     private static volatile AppDatabase INSTANCE;
 
     public abstract StudentDao studentDao();
+
+    public abstract ScholarshipDao scholarshipDao();
 
     public static AppDatabase getInstance(Context context) {
         if (INSTANCE == null) {
@@ -22,8 +26,7 @@ public abstract class AppDatabase extends RoomDatabase {
                     INSTANCE = Room.databaseBuilder(
                             context.getApplicationContext(),
                             AppDatabase.class,
-                            "iskolarphh_database"
-                    ).build();
+                            "iskolarphh_database").build();
                 }
             }
         }
