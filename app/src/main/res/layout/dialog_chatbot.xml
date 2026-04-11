@@ -4,7 +4,7 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:background="?android:attr/windowBackground"
+    android:background="#FFFFFF"
     android:padding="16dp">
 
     <LinearLayout
@@ -21,7 +21,7 @@
             android:text="IskolarPH AI"
             android:textSize="18sp"
             android:textStyle="bold"
-            android:textColor="?attr/colorPrimary" />
+            android:textColor="#001F3F" />
 
         <ImageButton
             android:id="@+id/btnClose"
@@ -29,20 +29,22 @@
             android:layout_height="32dp"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:src="@drawable/ic_back"
+            app:tint="#001F3F"
             android:contentDescription="Close chat" />
     </LinearLayout>
 
     <View
         android:layout_width="match_parent"
-        android:layout_height="1dp"
-        android:background="#E0E0E0" />
+        android:layout_height="2dp"
+        android:background="#D4A017" />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerMessages"
         android:layout_width="match_parent"
         android:layout_height="450dp"
         android:paddingVertical="8dp"
-        android:clipToPadding="false" />
+        android:clipToPadding="false"
+        android:background="#F5F5F5" />
 
     <ProgressBar
         android:id="@+id/progressBar"
@@ -66,7 +68,11 @@
             app:boxCornerRadiusBottomEnd="24dp"
             app:boxCornerRadiusBottomStart="24dp"
             app:boxCornerRadiusTopEnd="24dp"
-            app:boxCornerRadiusTopStart="24dp">
+            app:boxCornerRadiusTopStart="24dp"
+            app:boxStrokeColor="#001F3F"
+            app:boxStrokeWidth="1dp"
+            app:hintTextColor="#001F3F"
+            app:boxBackgroundColor="#FFFFFF">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/editMessage"
@@ -85,6 +91,8 @@
             android:layout_marginStart="8dp"
             android:src="@drawable/ic_check"
             android:contentDescription="Send message"
+            app:backgroundTint="#001F3F"
+            app:tint="#FFFFFF"
             app:fabSize="mini" />
     </LinearLayout>
 
