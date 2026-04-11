@@ -102,18 +102,26 @@ public class EmailVerificationActivity extends AppCompatActivity {
 
                         if (task.isSuccessful()) {
                             Log.d(TAG, "Verification email sent to " + user.getEmail());
+                            Log.d(TAG, "Firebase reports success - if email not received, check:");
+                            Log.d(TAG, "1. Spam/Junk folder in Gmail");
+                            Log.d(TAG, "2. Firebase Console > Auth > Templates > Email verification is enabled");
+                            Log.d(TAG, "3. Email/Password provider is enabled in Firebase Console");
                             Toast.makeText(EmailVerificationActivity.this,
-                                    "Verification email sent! Check your inbox.",
+                                    "Verification email sent! Check inbox AND spam folder.",
                                     Toast.LENGTH_LONG).show();
                             isEmailSent = true;
                             startResendCooldown();
                             tvMessage.setText("Please check your email and click the verification link.");
                         } else {
-                            Log.e(TAG, "sendEmailVerification failed", task.getException());
-                            Toast.makeText(EmailVerificationActivity.this,
-                                    "Failed to send verification email: " + 
-                                            (task.getException() != null ? task.getException().getMessage() : "Unknown error"),
-                                    Toast.LENGTH_LONG).show();
+                            Exception exception = task.getException();
+                            Log.e(TAG, "sendEmailVerification failed", exception);
+                            String errorMsg = "Failed to send: " + 
+                                (exception != null ? exception.getMessage() : "Unknown error");
+                            if (exception != null && exception.getMessage() != null &&
+                                exception.getMessage().contains("blocked")) {
+                                errorMsg = "Email sending blocked. Check Firebase Console authentication settings.";
+                            }
+                            Toast.makeText(EmailVerificationActivity.this, errorMsg, Toast.LENGTH_LONG).show();
                             btnResend.setEnabled(true);
                         }
                     }
