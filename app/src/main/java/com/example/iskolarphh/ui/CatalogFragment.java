@@ -97,6 +97,10 @@ public class CatalogFragment extends Fragment {
 
     private void observeScholarships() {
         repository.searchAndFilterScholarships(currentSearchQuery, currentLocationFilter)
-                .observe(getViewLifecycleOwner(), scholarships -> adapter.submitList(scholarships));
+                .observe(getViewLifecycleOwner(), scholarships -> {
+                    if (adapter != null) {
+                        adapter.submitList(scholarships);
+                    }
+                });
     }
 }
