@@ -8,7 +8,7 @@
     android:orientation="vertical"
     android:background="#001F3F">
 
-    <!-- HEADER (FIXED) -->
+    <!-- HEADER -->
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="80dp"
@@ -29,7 +29,7 @@
             android:focusable="true"
             android:background="?attr/selectableItemBackgroundBorderless"/>
 
-        <!-- Centered Logo and Text -->
+        <!-- Logo and Text -->
         <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -53,13 +53,13 @@
         </LinearLayout>
     </RelativeLayout>
 
-    <!-- Header Underline (FIXED) -->
+    <!-- Header Underline -->
     <View
         android:layout_width="match_parent"
         android:layout_height="2dp"
         android:background="#D4A017"/>
 
-    <!-- FIXED SECTION (Title, Search Bar, and Separator) -->
+    <!-- Title, Search Bar, and Separator -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -72,14 +72,14 @@
             android:id="@+id/tv_title"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Scholar Catalog"
+            android:text="Scholarship Catalog"
             android:textSize="22sp"
             android:textStyle="bold"
             android:textColor="#FFFFFF"
             android:layout_marginHorizontal="4dp"
             android:paddingBottom="12dp"/>
 
-        <!-- SEARCH BAR WITH INTEGRATED FILTERS -->
+        <!-- SEARCH BAR WITH FILTERS -->
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -101,7 +101,7 @@
                 <ImageView
                     android:layout_width="20dp"
                     android:layout_height="20dp"
-                    android:src="@android:drawable/ic_menu_search"
+                    android:src="@drawable/ic_search"
                     app:tint="#666666"/>
 
                 <EditText
@@ -161,393 +161,13 @@
             android:layout_marginHorizontal="12dp"/>
     </LinearLayout>
 
-    <!-- SCROLLABLE CONTENT (Scholarship Cards) -->
-    <ScrollView
+    <!-- Scholarship Cards -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rv_scholarships"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1">
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:paddingHorizontal="12dp"
-            android:paddingBottom="12dp">
-
-            <!-- LUZON CARD MODERN -->
-            <com.google.android.material.card.MaterialCardView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="12dp"
-                app:cardCornerRadius="16dp"
-                app:cardElevation="8dp"
-                app:strokeColor="#E0E0E0"
-                app:strokeWidth="1dp"
-                app:cardUseCompatPadding="true"
-                android:backgroundTint="#FFFFFF">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="16dp">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="LUZON"
-                        android:textColor="#FFFFFF"
-                        android:background="#1F2F46"
-                        android:padding="8dp"
-                        android:textStyle="bold"/>
-
-                    <!-- Scholarship Title with Icon -->
-                    <LinearLayout
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical"
-                        android:layout_marginTop="8dp">
-                        <ImageView
-                            android:layout_width="32dp"
-                            android:layout_height="32dp"
-                            android:src="@drawable/ic_school"
-                            app:tint="#1F2F46"
-                            android:layout_marginEnd="8dp"/>
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="DOST Scholarship"
-                            android:textSize="18sp"
-                            android:textStyle="bold"
-                            android:textColor="#1F2F46"/>
-                    </LinearLayout>
-
-                    <!-- Duration with Icon on Left -->
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical"
-                        android:layout_marginTop="8dp">
-                        <ImageView
-                            android:layout_width="18dp"
-                            android:layout_height="18dp"
-                            android:src="@drawable/ic_calendar"
-                            android:layout_marginEnd="8dp"
-                            app:tint="#D4A017"/>
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Duration: 4 Years"
-                            android:textColor="#333333"/>
-                    </LinearLayout>
-
-                    <!-- Stipend with Icon on Left -->
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical"
-                        android:layout_marginTop="4dp">
-                        <ImageView
-                            android:layout_width="18dp"
-                            android:layout_height="18dp"
-                            android:src="@drawable/ic_stipend"
-                            android:layout_marginEnd="8dp"
-                            app:tint="#D4A017"/>
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Monthly Stipend: ₱7,000"
-                            android:textColor="#333333"/>
-                    </LinearLayout>
-
-                    <!-- Required GWA with Check Icon on Left -->
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical"
-                        android:layout_marginTop="4dp">
-                        <ImageView
-                            android:layout_width="18dp"
-                            android:layout_height="18dp"
-                            android:src="@drawable/ic_check"
-                            android:layout_marginEnd="8dp"
-                            app:tint="#D4A017"/>
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Required GWA: 1.75"
-                            android:textColor="#333333"/>
-                    </LinearLayout>
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="This program provides financial assistance to talented students in the STEM field...."
-                        android:textSize="12sp"
-                        android:textColor="#666666"
-                        android:layout_marginTop="12dp"/>
-
-                    <Button
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="See More"
-                        android:backgroundTint="#D4A017"
-                        android:textColor="#1F2F46"
-                        android:layout_marginTop="10dp"/>
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
-
-            <!-- VISAYAS CARD -->
-            <com.google.android.material.card.MaterialCardView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="12dp"
-                app:cardCornerRadius="16dp"
-                app:cardElevation="8dp"
-                app:strokeColor="#E0E0E0"
-                app:strokeWidth="1dp"
-                app:cardUseCompatPadding="true"
-                android:backgroundTint="#FFFFFF">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="16dp">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="VISAYAS"
-                        android:textColor="#1F2F46"
-                        android:background="#D4A017"
-                        android:padding="8dp"
-                        android:textStyle="bold"/>
-
-                    <!-- Scholarship Title with Icon -->
-                    <LinearLayout
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical"
-                        android:layout_marginTop="8dp">
-                        <ImageView
-                            android:layout_width="32dp"
-                            android:layout_height="32dp"
-                            android:src="@drawable/ic_school"
-                            app:tint="#1F2F46"
-                            android:layout_marginEnd="8dp"/>
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="CHED Scholarship"
-                            android:textSize="18sp"
-                            android:textStyle="bold"
-                            android:textColor="#1F2F46"/>
-                    </LinearLayout>
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical"
-                        android:layout_marginTop="8dp">
-                        <ImageView
-                            android:layout_width="18dp"
-                            android:layout_height="18dp"
-                            android:src="@drawable/ic_calendar"
-                            android:layout_marginEnd="8dp"
-                            app:tint="#D4A017"/>
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Duration: 4 Years"
-                            android:textColor="#333333"/>
-                    </LinearLayout>
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical"
-                        android:layout_marginTop="4dp">
-                        <ImageView
-                            android:layout_width="18dp"
-                            android:layout_height="18dp"
-                            android:src="@drawable/ic_stipend"
-                            android:layout_marginEnd="8dp"
-                            app:tint="#D4A017"/>
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Monthly Stipend: ₱6,000"
-                            android:textColor="#333333"/>
-                    </LinearLayout>
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical"
-                        android:layout_marginTop="4dp">
-                        <ImageView
-                            android:layout_width="18dp"
-                            android:layout_height="18dp"
-                            android:src="@drawable/ic_check"
-                            android:layout_marginEnd="8dp"
-                            app:tint="#D4A017"/>
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Required GWA: 2.0"
-                            android:textColor="#333333"/>
-                    </LinearLayout>
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="Offers support for tertiary education in various priority courses across the region...."
-                        android:textSize="12sp"
-                        android:textColor="#666666"
-                        android:layout_marginTop="12dp"/>
-
-                    <Button
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="See More"
-                        android:backgroundTint="#D4A017"
-                        android:textColor="#1F2F46"
-                        android:layout_marginTop="10dp"/>
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
-
-            <!-- MINDANAO CARD -->
-            <com.google.android.material.card.MaterialCardView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                app:cardCornerRadius="16dp"
-                app:cardElevation="8dp"
-                app:strokeColor="#E0E0E0"
-                app:strokeWidth="1dp"
-                app:cardUseCompatPadding="true"
-                android:backgroundTint="#FFFFFF">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="16dp">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="MINDANAO"
-                        android:textColor="#1F2F46"
-                        android:background="#D4A017"
-                        android:padding="8dp"
-                        android:textStyle="bold"/>
-
-                    <!-- Scholarship Title with Icon -->
-                    <LinearLayout
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical"
-                        android:layout_marginTop="8dp">
-                        <ImageView
-                            android:layout_width="32dp"
-                            android:layout_height="32dp"
-                            android:src="@drawable/ic_school"
-                            app:tint="#1F2F46"
-                            android:layout_marginEnd="8dp"/>
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="TESDA Scholarship"
-                            android:textSize="18sp"
-                            android:textStyle="bold"
-                            android:textColor="#1F2F46"/>
-                    </LinearLayout>
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical"
-                        android:layout_marginTop="8dp">
-                        <ImageView
-                            android:layout_width="18dp"
-                            android:layout_height="18dp"
-                            android:src="@drawable/ic_calendar"
-                            android:layout_marginEnd="8dp"
-                            app:tint="#D4A017"/>
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Duration: 2 Years"
-                            android:textColor="#333333"/>
-                    </LinearLayout>
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical"
-                        android:layout_marginTop="4dp">
-                        <ImageView
-                            android:layout_width="18dp"
-                            android:layout_height="18dp"
-                            android:src="@drawable/ic_stipend"
-                            android:layout_marginEnd="8dp"
-                            app:tint="#D4A017"/>
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Training Allowance Included"
-                            android:textColor="#333333"/>
-                    </LinearLayout>
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical"
-                        android:layout_marginTop="4dp">
-                        <ImageView
-                            android:layout_width="18dp"
-                            android:layout_height="18dp"
-                            android:src="@drawable/ic_check"
-                            android:layout_marginEnd="8dp"
-                            app:tint="#D4A017"/>
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Required GWA: 2.5"
-                            android:textColor="#333333"/>
-                    </LinearLayout>
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="Focuses on technical-vocational skills training for employment opportunities...."
-                        android:textSize="12sp"
-                        android:textColor="#666666"
-                        android:layout_marginTop="12dp"/>
-
-                    <Button
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="See More"
-                        android:backgroundTint="#D4A017"
-                        android:textColor="#1F2F46"
-                        android:layout_marginTop="10dp"/>
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
-
-        </LinearLayout>
-    </ScrollView>
+        android:layout_weight="1"
+        android:paddingHorizontal="12dp"
+        android:paddingTop="8dp"
+        android:clipToPadding="false"/>
 </LinearLayout>

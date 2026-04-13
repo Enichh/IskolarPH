@@ -28,6 +28,9 @@ public class Scholarship {
     @ColumnInfo(name = "application_deadline")
     private String applicationDeadline; // Stored as ISO 8601 string (e.g., "2026-12-31")
 
+    @ColumnInfo(name = "location")
+    private String location; // (e.g., "Luzon", "Visayas", "Mindanao")
+
     @ColumnInfo(name = "is_active")
     private boolean isActive;
 
@@ -71,6 +74,9 @@ public class Scholarship {
 
     public String getApplicationDeadline() { return applicationDeadline; }
     public void setApplicationDeadline(String applicationDeadline) { this.applicationDeadline = applicationDeadline; }
+
+    public String getLocation() { return location; }
+    public void setLocation(String location) { this.location = location; }
 
     public boolean isActive() { return isActive; }
     public void setActive(boolean active) { isActive = active; }
