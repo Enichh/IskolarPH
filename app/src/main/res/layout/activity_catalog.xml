@@ -136,6 +136,19 @@
                     android:focusable="true"
                     android:background="?attr/selectableItemBackgroundBorderless"/>
 
+                <!-- GPA Filter -->
+                <ImageView
+                    android:id="@+id/btn_filter_gpa"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:src="@android:drawable/ic_menu_sort_by_size"
+                    app:tint="#1F2F46"
+                    android:layout_marginStart="8dp"
+                    android:contentDescription="Filter by GPA"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:background="?attr/selectableItemBackgroundBorderless"/>
+
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 

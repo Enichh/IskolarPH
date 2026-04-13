@@ -10,7 +10,7 @@ public interface ScholarshipDao {
 
     // CREATE
     @Insert
-    void insert(Scholarship scholarship);
+    long insert(Scholarship scholarship);
 
     // READ (ALL)
     @Query("SELECT * FROM scholarships")
@@ -27,9 +27,9 @@ public interface ScholarshipDao {
 
     // UPDATE
     @Update
-    void update(Scholarship scholarship);
+    int update(Scholarship scholarship);
 
     // DELETE
     @Delete
-    void delete(Scholarship scholarship);
+    int delete(Scholarship scholarship);
 }

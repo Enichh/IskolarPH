@@ -9,26 +9,40 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.LiveData;
+import androidx.lifecycle.Observer;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.iskolarphh.R;
 import com.example.iskolarphh.database.entity.Scholarship;
+import com.example.iskolarphh.database.entity.Student;
 import com.example.iskolarphh.repository.ScholarshipRepository;
+import com.example.iskolarphh.repository.StudentRepository;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class CatalogFragment extends Fragment {
 
-    private ScholarshipRepository repository;
+    private ScholarshipRepository scholarshipRepository;
+    private StudentRepository studentRepository;
     private ScholarshipAdapter adapter;
+    private FirebaseAuth firebaseAuth;
+    private Student currentStudent;
     private String currentSearchQuery = "";
     private String currentLocationFilter = null;
+    private boolean gpaFilterEnabled = false;
 
     @Nullable
     @Override
@@ -36,13 +50,14 @@ public class CatalogFragment extends Fragment {
             @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.activity_catalog, container, false);
 
-        repository = new ScholarshipRepository(requireContext());
+        scholarshipRepository = new ScholarshipRepository(requireContext());
+        studentRepository = new StudentRepository(requireContext());
+        firebaseAuth = FirebaseAuth.getInstance();
 
         setupRecyclerView(view);
         setupSearch(view);
         setupFilters(view);
-
-        observeScholarships();
+        loadStudentData();
 
         return view;
     }
@@ -77,7 +92,26 @@ public class CatalogFragment extends Fragment {
 
     private void setupFilters(View view) {
         ImageView btnFilterLocation = view.findViewById(R.id.btn_filter_location);
+        ImageView btnFilterGpa = view.findViewById(R.id.btn_filter_gpa);
+
         btnFilterLocation.setOnClickListener(v -> showLocationFilterDialog());
+        btnFilterGpa.setOnClickListener(v -> toggleGpaFilter());
+    }
+
+    private void loadStudentData() {
+        FirebaseUser firebaseUser = firebaseAuth.getCurrentUser();
+        if (firebaseUser != null) {
+            LiveData<Student> studentLiveData = studentRepository.getStudentByFirebaseUid(firebaseUser.getUid());
+            studentLiveData.observe(getViewLifecycleOwner(), new Observer<Student>() {
+                @Override
+                public void onChanged(Student student) {
+                    if (student != null) {
+                        currentStudent = student;
+                        observeScholarships();
+                    }
+                }
+            });
+        }
     }
 
     private void showLocationFilterDialog() {
@@ -95,12 +129,69 @@ public class CatalogFragment extends Fragment {
                 .show();
     }
 
+    private void toggleGpaFilter() {
+        if (currentStudent == null) {
+            Toast.makeText(requireContext(), "Please complete your profile first", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        gpaFilterEnabled = !gpaFilterEnabled;
+        String status = gpaFilterEnabled ? "enabled" : "disabled";
+        Toast.makeText(requireContext(), "GPA filter " + status, Toast.LENGTH_SHORT).show();
+        observeScholarships();
+    }
+
     private void observeScholarships() {
-        repository.searchAndFilterScholarships(currentSearchQuery, currentLocationFilter)
+        scholarshipRepository.searchAndFilterScholarships(currentSearchQuery, currentLocationFilter)
                 .observe(getViewLifecycleOwner(), scholarships -> {
                     if (adapter != null) {
-                        adapter.submitList(scholarships);
+                        List<Scholarship> filteredScholarships = scholarships;
+                        if (gpaFilterEnabled && currentStudent != null) {
+                            filteredScholarships = filterByGpa(scholarships, currentStudent.getGpa());
+                        }
+                        adapter.submitList(filteredScholarships);
                     }
                 });
+    }
+
+    private List<Scholarship> filterByGpa(List<Scholarship> scholarships, double studentGpa) {
+        List<Scholarship> filtered = new ArrayList<>();
+        for (Scholarship scholarship : scholarships) {
+            Double requiredGpa = parseGpaFromEligibility(scholarship.getEligibilityCriteria());
+            if (requiredGpa == null || studentGpa >= requiredGpa) {
+                filtered.add(scholarship);
+            }
+        }
+        return filtered;
+    }
+
+    private Double parseGpaFromEligibility(String eligibilityCriteria) {
+        if (eligibilityCriteria == null) {
+            return null;
+        }
+        
+        Pattern pattern = Pattern.compile("(\\d+\\.?\\d*)%");
+        Matcher matcher = pattern.matcher(eligibilityCriteria);
+        
+        if (matcher.find()) {
+            try {
+                double percentage = Double.parseDouble(matcher.group(1));
+                return percentage / 100.0 * 4.0;
+            } catch (NumberFormatException e) {
+                return null;
+            }
+        }
+        
+        Pattern gpaPattern = Pattern.compile("(\\d+\\.?\\d*)");
+        Matcher gpaMatcher = gpaPattern.matcher(eligibilityCriteria);
+        
+        if (gpaMatcher.find()) {
+            try {
+                return Double.parseDouble(gpaMatcher.group(1));
+            } catch (NumberFormatException e) {
+                return null;
+            }
+        }
+        
+        return null;
     }
 }
