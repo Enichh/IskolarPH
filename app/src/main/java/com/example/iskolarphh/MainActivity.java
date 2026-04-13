@@ -34,6 +34,11 @@ public class MainActivity extends AppCompatActivity {
             ChatbotDialog dialog = new ChatbotDialog();
             dialog.show(getSupportFragmentManager(), "ChatbotDialog");
         });
+        
+        // Load default fragment (Dashboard)
+        getSupportFragmentManager().beginTransaction()
+                .replace(R.id.fragment_container, new DashboardFragment())
+                .commit();
     }
 
     private BottomNavigationView.OnNavigationItemSelectedListener navListener = new BottomNavigationView.OnNavigationItemSelectedListener() {
