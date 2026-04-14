@@ -1,6 +1,7 @@
 package com.example.iskolarphh.ui;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -8,7 +9,9 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -21,10 +24,16 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.iskolarphh.R;
+import com.example.iskolarphh.callback.LocationCallback;
 import com.example.iskolarphh.database.entity.Scholarship;
 import com.example.iskolarphh.database.entity.Student;
 import com.example.iskolarphh.repository.ScholarshipRepository;
 import com.example.iskolarphh.repository.StudentRepository;
+import com.example.iskolarphh.service.GeocoderService;
+import com.example.iskolarphh.service.LocationManager;
+import com.example.iskolarphh.service.LocationPermissionHandler;
+import com.example.iskolarphh.util.LocationConstants;
+import com.example.iskolarphh.util.LocationPreferences;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 
@@ -44,6 +53,9 @@ public class CatalogFragment extends Fragment {
     private String currentLocationFilter = null;
     private boolean gpaFilterEnabled = false;
 
+    private TextView tvLocationHeader;
+    private ImageButton btnRefreshLocation;
+
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
@@ -57,6 +69,7 @@ public class CatalogFragment extends Fragment {
         setupRecyclerView(view);
         setupSearch(view);
         setupFilters(view);
+        setupLocationHeader(view);
         loadStudentData();
 
         return view;
@@ -98,6 +111,13 @@ public class CatalogFragment extends Fragment {
         btnFilterGpa.setOnClickListener(v -> toggleGpaFilter());
     }
 
+    private void setupLocationHeader(View view) {
+        tvLocationHeader = view.findViewById(R.id.tvLocationHeader);
+        btnRefreshLocation = view.findViewById(R.id.btnRefreshLocation);
+
+        btnRefreshLocation.setOnClickListener(v -> refreshLocation());
+    }
+
     private void loadStudentData() {
         FirebaseUser firebaseUser = firebaseAuth.getCurrentUser();
         if (firebaseUser != null) {
@@ -107,6 +127,7 @@ public class CatalogFragment extends Fragment {
                 public void onChanged(Student student) {
                     if (student != null) {
                         currentStudent = student;
+                        updateLocationHeader();
                         observeScholarships();
                     }
                 }
@@ -141,7 +162,10 @@ public class CatalogFragment extends Fragment {
     }
 
     private void observeScholarships() {
-        scholarshipRepository.searchAndFilterScholarships(currentSearchQuery, currentLocationFilter)
+        String location = currentLocationFilter != null ? currentLocationFilter : LocationPreferences.getLastLocation(requireContext());
+        Double studentGpa = currentStudent != null ? currentStudent.getGpa() : null;
+        
+        scholarshipRepository.searchAndFilterScholarships(currentSearchQuery, location, studentGpa, gpaFilterEnabled)
                 .observe(getViewLifecycleOwner(), scholarships -> {
                     if (adapter != null) {
                         List<Scholarship> filteredScholarships = scholarships;
@@ -193,5 +217,97 @@ public class CatalogFragment extends Fragment {
         }
         
         return null;
+    }
+
+    private void updateLocationHeader() {
+        if (currentStudent != null && currentStudent.getLocation() != null && !currentStudent.getLocation().isEmpty()) {
+            tvLocationHeader.setText("Scholarships near " + currentStudent.getLocation());
+        } else {
+            tvLocationHeader.setText("All Scholarships");
+        }
+    }
+
+    private void refreshLocation() {
+        if (currentStudent == null) {
+            Toast.makeText(requireContext(), "Please complete your profile first", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        if (LocationPermissionHandler.hasLocationPermissions(requireContext())) {
+            fetchLocationForHeader();
+        } else {
+            LocationPermissionHandler.checkAndRequestLocationPermissions(requireActivity(),
+                LocationConstants.LOCATION_PERMISSION_REQUEST_CODE);
+        }
+    }
+
+    private void fetchLocationForHeader() {
+        LocationManager.getInstance().requestSingleLocationUpdate(requireContext(), new LocationCallback() {
+            @Override
+            public void onLocationRetrieved(String location, double latitude, double longitude) {
+                GeocoderService.getInstance().getLocationFromCoordinates(requireContext(), latitude, longitude, new LocationCallback() {
+                    @Override
+                    public void onLocationRetrieved(String locationString, double lat, double lng) {
+                        requireActivity().runOnUiThread(() -> {
+                            if (currentStudent != null) {
+                                currentStudent.setLocation(locationString);
+                                LocationPreferences.saveLocation(requireContext(), locationString, LocationConstants.LOCATION_SOURCE_GPS);
+                                studentRepository.update(currentStudent, null);
+                                updateLocationHeader();
+                                Toast.makeText(requireContext(), "Location updated", Toast.LENGTH_SHORT).show();
+                            }
+                        });
+                    }
+
+                    @Override
+                    public void onLocationError(String errorMessage) {
+                        requireActivity().runOnUiThread(() -> {
+                            Toast.makeText(requireContext(), "Geocoder error: " + errorMessage + ". Using last known location.", Toast.LENGTH_SHORT).show();
+                            String lastLocation = LocationPreferences.getLastLocation(requireContext());
+                            if (currentStudent != null) {
+                                currentStudent.setLocation(lastLocation);
+                                updateLocationHeader();
+                            }
+                        });
+                    }
+
+                    @Override
+                    public void onPermissionDenied() {
+                        requireActivity().runOnUiThread(() -> {
+                            Toast.makeText(requireContext(), "Location permission denied. Using last known location.", Toast.LENGTH_SHORT).show();
+                            String lastLocation = LocationPreferences.getLastLocation(requireContext());
+                            if (currentStudent != null) {
+                                currentStudent.setLocation(lastLocation);
+                                updateLocationHeader();
+                            }
+                        });
+                    }
+                });
+            }
+
+            @Override
+            public void onLocationError(String errorMessage) {
+                requireActivity().runOnUiThread(() -> {
+                    Toast.makeText(requireContext(), "GPS error: " + errorMessage + ". Using last known location.", Toast.LENGTH_SHORT).show();
+                    String lastLocation = LocationPreferences.getLastLocation(requireContext());
+                    if (currentStudent != null) {
+                        currentStudent.setLocation(lastLocation);
+                        updateLocationHeader();
+                    }
+                });
+            }
+
+            @Override
+            public void onPermissionDenied() {
+                requireActivity().runOnUiThread(() -> {
+                    Toast.makeText(requireContext(), "Location permission denied. Using last known location.", Toast.LENGTH_SHORT).show();
+                    String lastLocation = LocationPreferences.getLastLocation(requireContext());
+                    if (currentStudent != null) {
+                        currentStudent.setLocation(lastLocation);
+                        updateLocationHeader();
+                    }
+                });
+            }
+        });
     }
 }

@@ -1,8 +1,12 @@
 package com.example.iskolarphh;
 
+import android.Manifest;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.view.MenuItem;
 import androidx.annotation.NonNull;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
@@ -14,11 +18,23 @@ import androidx.fragment.app.Fragment;
 import com.example.iskolarphh.ui.CatalogFragment;
 import com.example.iskolarphh.ui.DashboardFragment;
 import com.example.iskolarphh.ui.ProfileFragment;
+import com.example.iskolarphh.ui.LocationPermissionDialog;
+import com.example.iskolarphh.ui.ChatbotDialog;
+import com.example.iskolarphh.service.LocationManager;
+import com.example.iskolarphh.service.LocationPermissionHandler;
+import com.example.iskolarphh.service.GeocoderService;
+import com.example.iskolarphh.callback.LocationCallback;
+import com.example.iskolarphh.util.LocationConstants;
+import com.example.iskolarphh.util.LocationPreferences;
+import com.example.iskolarphh.repository.StudentRepository;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
-import com.example.iskolarphh.ui.ChatbotDialog;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 
 public class MainActivity extends AppCompatActivity {
+
+    private static final String PREF_DIALOG_SHOWN = "location_dialog_shown";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -34,11 +50,93 @@ public class MainActivity extends AppCompatActivity {
             ChatbotDialog dialog = new ChatbotDialog();
             dialog.show(getSupportFragmentManager(), "ChatbotDialog");
         });
-        
+
+        checkLocationPermissionFlow();
+
         // Load default fragment (Dashboard)
         getSupportFragmentManager().beginTransaction()
                 .replace(R.id.fragment_container, new DashboardFragment())
                 .commit();
+    }
+
+    private void checkLocationPermissionFlow() {
+        FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
+        if (firebaseUser == null) {
+            return;
+        }
+
+        boolean dialogShown = LocationPreferences.isLocationGranted(this);
+        if (!dialogShown) {
+            showLocationPermissionDialog();
+        }
+    }
+
+    private void showLocationPermissionDialog() {
+        LocationPermissionDialog.show(this, new LocationPermissionDialog.LocationPermissionCallback() {
+            @Override
+            public void onPermissionAllowed() {
+                LocationPermissionHandler.checkAndRequestLocationPermissions(MainActivity.this,
+                        LocationConstants.LOCATION_PERMISSION_REQUEST_CODE);
+            }
+
+            @Override
+            public void onPermissionDenied() {
+                LocationPreferences.setLocationGranted(MainActivity.this, true);
+            }
+        });
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == LocationConstants.LOCATION_PERMISSION_REQUEST_CODE) {
+            LocationPreferences.setLocationGranted(this, true);
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                fetchUserLocation();
+            }
+        }
+    }
+
+    private void fetchUserLocation() {
+        FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
+        if (firebaseUser == null) {
+            return;
+        }
+
+        LocationManager.getInstance().requestSingleLocationUpdate(this, new LocationCallback() {
+            @Override
+            public void onLocationRetrieved(String location, double latitude, double longitude) {
+                GeocoderService.getInstance().getLocationFromCoordinates(MainActivity.this, latitude, longitude, new LocationCallback() {
+                    @Override
+                    public void onLocationRetrieved(String locationString, double lat, double lng) {
+                        LocationPreferences.saveLocation(MainActivity.this, locationString, LocationConstants.LOCATION_SOURCE_GPS);
+                        StudentRepository studentRepository = new StudentRepository(MainActivity.this);
+                        studentRepository.updateLocation(firebaseUser.getUid(), locationString, rowsAffected -> {
+                        });
+                    }
+
+                    @Override
+                    public void onLocationError(String errorMessage) {
+                        LocationPreferences.saveLocation(MainActivity.this, LocationConstants.DEFAULT_LOCATION, LocationConstants.LOCATION_SOURCE_MANUAL);
+                    }
+
+                    @Override
+                    public void onPermissionDenied() {
+                        LocationPreferences.saveLocation(MainActivity.this, LocationConstants.DEFAULT_LOCATION, LocationConstants.LOCATION_SOURCE_MANUAL);
+                    }
+                });
+            }
+
+            @Override
+            public void onLocationError(String errorMessage) {
+                LocationPreferences.saveLocation(MainActivity.this, LocationConstants.DEFAULT_LOCATION, LocationConstants.LOCATION_SOURCE_MANUAL);
+            }
+
+            @Override
+            public void onPermissionDenied() {
+                LocationPreferences.saveLocation(MainActivity.this, LocationConstants.DEFAULT_LOCATION, LocationConstants.LOCATION_SOURCE_MANUAL);
+            }
+        });
     }
 
     private BottomNavigationView.OnNavigationItemSelectedListener navListener = new BottomNavigationView.OnNavigationItemSelectedListener() {

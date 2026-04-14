@@ -24,6 +24,10 @@ public interface StudentDao {
     @Query("SELECT * FROM students WHERE firebase_uid = :firebaseUid LIMIT 1")
     LiveData<Student> getStudentByFirebaseUid(String firebaseUid);
 
+    // READ (BY FIREBASE UID) - SYNC VERSION FOR BACKGROUND THREADS
+    @Query("SELECT * FROM students WHERE firebase_uid = :firebaseUid LIMIT 1")
+    Student getStudentByFirebaseUidSync(String firebaseUid);
+
     // UPDATE - returns number of rows updated
     @Update
     int update(Student student);

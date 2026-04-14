@@ -69,6 +69,9 @@ dependencies {
     implementation(platform("com.google.firebase:firebase-bom:32.7.0"))
     implementation("com.google.firebase:firebase-auth")
 
+    // Google Play Services Location
+    implementation("com.google.android.gms:play-services-location:21.0.1")
+
     // Retrofit & Networking
     implementation(libs.retrofit)
     implementation(libs.retrofit.gson)

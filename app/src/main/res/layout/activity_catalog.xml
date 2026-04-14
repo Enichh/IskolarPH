@@ -160,6 +160,35 @@
             android:layout_marginTop="20dp"
             android:layout_marginBottom="8dp"
             android:layout_marginHorizontal="12dp"/>
+
+        <!-- Location Header -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingHorizontal="12dp"
+            android:paddingBottom="8dp">
+
+            <TextView
+                android:id="@+id/tvLocationHeader"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="All Scholarships"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="#FFFFFF" />
+
+            <ImageButton
+                android:id="@+id/btnRefreshLocation"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:padding="8dp"
+                android:src="@android:drawable/ic_menu_rotate"
+                android:tint="#FFFFFF" />
+        </LinearLayout>
     </LinearLayout>
 
     <!-- Scholarship Cards -->

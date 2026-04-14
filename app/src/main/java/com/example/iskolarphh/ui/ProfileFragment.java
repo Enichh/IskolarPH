@@ -7,6 +7,7 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -17,8 +18,13 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.Observer;
 
 import com.example.iskolarphh.R;
+import com.example.iskolarphh.callback.LocationCallback;
 import com.example.iskolarphh.database.entity.Student;
 import com.example.iskolarphh.repository.StudentRepository;
+import com.example.iskolarphh.service.GeocoderService;
+import com.example.iskolarphh.service.LocationManager;
+import com.example.iskolarphh.service.LocationPermissionHandler;
+import com.example.iskolarphh.util.LocationConstants;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 
@@ -38,6 +44,8 @@ public class ProfileFragment extends Fragment {
     private EditText etEmail;
     private Button btnUpdate;
     private ImageButton btnExit;
+    private ImageButton btnUseCurrentLocation;
+    private ProgressBar progressBarLocation;
 
     @Nullable
     @Override
@@ -66,6 +74,8 @@ public class ProfileFragment extends Fragment {
         etEmail = view.findViewById(R.id.etEmail);
         btnUpdate = view.findViewById(R.id.btnUpdate);
         btnExit = view.findViewById(R.id.btnExit);
+        btnUseCurrentLocation = view.findViewById(R.id.btnUseCurrentLocation);
+        progressBarLocation = view.findViewById(R.id.progressBarLocation);
 
         view.findViewById(R.id.etCollege).setVisibility(View.GONE);
         view.findViewById(R.id.etCourse).setVisibility(View.GONE);
@@ -134,6 +144,13 @@ public class ProfileFragment extends Fragment {
                 logout();
             }
         });
+
+        btnUseCurrentLocation.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                handleLocationButtonClick();
+            }
+        });
     }
 
     private void updateProfile() {
@@ -193,5 +210,85 @@ public class ProfileFragment extends Fragment {
         firebaseAuth.signOut();
         Toast.makeText(requireContext(), "Logged out successfully", Toast.LENGTH_SHORT).show();
         requireActivity().finish();
+    }
+
+    private void handleLocationButtonClick() {
+        if (LocationPermissionHandler.hasLocationPermissions(requireContext())) {
+            showLocationPermissionDialog();
+        } else {
+            LocationPermissionHandler.checkAndRequestLocationPermissions(requireActivity(), 
+                LocationConstants.LOCATION_PERMISSION_REQUEST_CODE);
+        }
+    }
+
+    private void showLocationPermissionDialog() {
+        LocationPermissionDialog.show(requireContext(), new LocationPermissionDialog.LocationPermissionCallback() {
+            @Override
+            public void onPermissionAllowed() {
+                fetchCurrentLocation();
+            }
+
+            @Override
+            public void onPermissionDenied() {
+                Toast.makeText(requireContext(), "Location permission denied", Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    private void fetchCurrentLocation() {
+        progressBarLocation.setVisibility(View.VISIBLE);
+        btnUseCurrentLocation.setEnabled(false);
+
+        LocationManager.getInstance().requestSingleLocationUpdate(requireContext(), new LocationCallback() {
+            @Override
+            public void onLocationRetrieved(String location, double latitude, double longitude) {
+                GeocoderService.getInstance().getLocationFromCoordinates(requireContext(), latitude, longitude, new LocationCallback() {
+                    @Override
+                    public void onLocationRetrieved(String locationString, double lat, double lng) {
+                        requireActivity().runOnUiThread(() -> {
+                            progressBarLocation.setVisibility(View.GONE);
+                            btnUseCurrentLocation.setEnabled(true);
+                            etLocation.setText(locationString);
+                            Toast.makeText(requireContext(), "Location updated: " + locationString, Toast.LENGTH_SHORT).show();
+                        });
+                    }
+
+                    @Override
+                    public void onLocationError(String errorMessage) {
+                        requireActivity().runOnUiThread(() -> {
+                            progressBarLocation.setVisibility(View.GONE);
+                            btnUseCurrentLocation.setEnabled(true);
+                            etLocation.setText(LocationConstants.DEFAULT_LOCATION);
+                            Toast.makeText(requireContext(), "Using default location", Toast.LENGTH_SHORT).show();
+                        });
+                    }
+
+                    @Override
+                    public void onPermissionDenied() {
+                        requireActivity().runOnUiThread(() -> {
+                            progressBarLocation.setVisibility(View.GONE);
+                            btnUseCurrentLocation.setEnabled(true);
+                        });
+                    }
+                });
+            }
+
+            @Override
+            public void onLocationError(String errorMessage) {
+                requireActivity().runOnUiThread(() -> {
+                    progressBarLocation.setVisibility(View.GONE);
+                    btnUseCurrentLocation.setEnabled(true);
+                    Toast.makeText(requireContext(), errorMessage, Toast.LENGTH_SHORT).show();
+                });
+            }
+
+            @Override
+            public void onPermissionDenied() {
+                requireActivity().runOnUiThread(() -> {
+                    progressBarLocation.setVisibility(View.GONE);
+                    btnUseCurrentLocation.setEnabled(true);
+                });
+            }
+        });
     }
 }

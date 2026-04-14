@@ -88,6 +88,24 @@ public class StudentRepository {
         executorService.execute(() -> studentDao.delete(student));
     }
 
+    // Update location by firebaseUid - async with callback
+    public void updateLocation(String firebaseUid, String location, UpdateCallback callback) {
+        executorService.execute(() -> {
+            Student student = studentDao.getStudentByFirebaseUidSync(firebaseUid);
+            int result = 0;
+            if (student != null) {
+                student.setLocation(location);
+                result = studentDao.update(student);
+            }
+            final int rowsAffected = result;
+            new Handler(Looper.getMainLooper()).post(() -> {
+                if (callback != null) {
+                    callback.onUpdateComplete(rowsAffected);
+                }
+            });
+        });
+    }
+
     // Callback interfaces
     public interface InsertCallback {
         void onInsertComplete(long id);
