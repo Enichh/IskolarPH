@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "811479014120",
+    "project_id": "iskolarph",
+    "storage_bucket": "iskolarph.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:811479014120:android:7a3dc325f7dbe924dc875d",
+        "android_client_info": {
+          "package_name": "com.example.iskolarphh"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCDQTjZ8jZP6oQiC02VSewlaDqlzJWMtF0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
