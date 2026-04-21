@@ -62,7 +62,7 @@ public class CatalogFragment extends Fragment {
             @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.activity_catalog, container, false);
 
-        scholarshipRepository = new ScholarshipRepository(requireContext());
+        scholarshipRepository = ScholarshipRepository.getInstance(requireContext());
         studentRepository = new StudentRepository(requireContext());
         firebaseAuth = FirebaseAuth.getInstance();
 
@@ -78,10 +78,22 @@ public class CatalogFragment extends Fragment {
     private void setupRecyclerView(View view) {
         RecyclerView recyclerView = view.findViewById(R.id.rv_scholarships);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
-        adapter = new ScholarshipAdapter(scholarship -> {
-            Intent intent = new Intent(getActivity(), ScholarshipDetailActivity.class);
-            intent.putExtra(ScholarshipDetailActivity.EXTRA_SCHOLARSHIP_ID, scholarship.getId());
-            startActivity(intent);
+        adapter = new ScholarshipAdapter(new ScholarshipAdapter.OnScholarshipClickListener() {
+            @Override
+            public void onScholarshipClick(Scholarship scholarship) {
+                Intent intent = new Intent(getActivity(), ScholarshipDetailActivity.class);
+                intent.putExtra(ScholarshipDetailActivity.EXTRA_SCHOLARSHIP_ID, scholarship.getId());
+                startActivity(intent);
+            }
+
+            @Override
+            public void onSaveClick(Scholarship scholarship) {
+                scholarship.setSaved(!scholarship.isSaved());
+                scholarshipRepository.update(scholarship);
+                adapter.notifyItemChanged(adapter.getCurrentList().indexOf(scholarship));
+                String message = scholarship.isSaved() ? "Scholarship saved" : "Scholarship removed from saved";
+                Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show();
+            }
         });
         recyclerView.setAdapter(adapter);
     }
@@ -163,9 +175,8 @@ public class CatalogFragment extends Fragment {
 
     private void observeScholarships() {
         String location = currentLocationFilter != null ? currentLocationFilter : LocationPreferences.getLastLocation(requireContext());
-        Double studentGpa = currentStudent != null ? currentStudent.getGpa() : null;
         
-        scholarshipRepository.searchAndFilterScholarships(currentSearchQuery, location, studentGpa, gpaFilterEnabled)
+        scholarshipRepository.searchAndFilterScholarships(currentSearchQuery, location)
                 .observe(getViewLifecycleOwner(), scholarships -> {
                     if (adapter != null) {
                         List<Scholarship> filteredScholarships = scholarships;

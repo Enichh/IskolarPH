@@ -1,5 +1,6 @@
 package com.example.iskolarphh;
 
+import android.content.Intent;
 import android.Manifest;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
@@ -35,6 +36,7 @@ import com.google.firebase.auth.FirebaseUser;
 public class MainActivity extends AppCompatActivity {
 
     private static final String PREF_DIALOG_SHOWN = "location_dialog_shown";
+    private BottomNavigationView bottomNav;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -42,7 +44,7 @@ public class MainActivity extends AppCompatActivity {
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
 
-        BottomNavigationView bottomNav = findViewById(R.id.bottom_navigation);
+        bottomNav = findViewById(R.id.bottom_navigation);
         bottomNav.setOnNavigationItemSelectedListener(navListener);
 
         FloatingActionButton fabChat = findViewById(R.id.fabChat);
@@ -53,10 +55,31 @@ public class MainActivity extends AppCompatActivity {
 
         checkLocationPermissionFlow();
 
-        // Load default fragment (Dashboard)
-        getSupportFragmentManager().beginTransaction()
-                .replace(R.id.fragment_container, new DashboardFragment())
-                .commit();
+        // Handle navigation from other activities
+        if (getIntent().hasExtra("extra_navigate_to")) {
+            handleIntentNavigation(getIntent());
+        } else {
+            // Load default fragment (Dashboard)
+            getSupportFragmentManager().beginTransaction()
+                    .replace(R.id.fragment_container, new DashboardFragment())
+                    .commit();
+        }
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        handleIntentNavigation(intent);
+    }
+
+    private void handleIntentNavigation(Intent intent) {
+        if (intent != null && intent.hasExtra("extra_navigate_to")) {
+            int navigateTo = intent.getIntExtra("extra_navigate_to", -1);
+            if (navigateTo != -1) {
+                bottomNav.setSelectedItemId(navigateTo);
+            }
+        }
     }
 
     private void checkLocationPermissionFlow() {

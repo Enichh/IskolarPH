@@ -22,6 +22,7 @@ public class ScholarshipAdapter extends ListAdapter<Scholarship, ScholarshipAdap
 
     public interface OnScholarshipClickListener {
         void onScholarshipClick(Scholarship scholarship);
+        void onSaveClick(Scholarship scholarship);
     }
 
     public ScholarshipAdapter(OnScholarshipClickListener listener) {
@@ -59,6 +60,7 @@ public class ScholarshipAdapter extends ListAdapter<Scholarship, ScholarshipAdap
     static class ScholarshipViewHolder extends RecyclerView.ViewHolder {
         private final TextView tvLocationTag, tvScholarshipName, tvProvider, tvDeadline, tvAmount, tvShortDescription;
         private final Button btnSeeMore;
+        private final android.widget.ImageButton btnSave;
 
         public ScholarshipViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -69,6 +71,7 @@ public class ScholarshipAdapter extends ListAdapter<Scholarship, ScholarshipAdap
             tvAmount = itemView.findViewById(R.id.tv_amount);
             tvShortDescription = itemView.findViewById(R.id.tv_short_description);
             btnSeeMore = itemView.findViewById(R.id.btn_see_more);
+            btnSave = itemView.findViewById(R.id.btn_save);
         }
 
         public void bind(Scholarship scholarship, OnScholarshipClickListener listener) {
@@ -79,6 +82,13 @@ public class ScholarshipAdapter extends ListAdapter<Scholarship, ScholarshipAdap
             tvAmount.setText(String.format(Locale.getDefault(), "Award: ₱%.2f", scholarship.getAwardAmount()));
             tvShortDescription.setText(scholarship.getDescription());
 
+            // Update save icon based on state
+            if (scholarship.isSaved()) {
+                btnSave.setImageResource(R.drawable.ic_bookmark);
+            } else {
+                btnSave.setImageResource(R.drawable.ic_bookmark_border);
+            }
+
             View.OnClickListener clickListener = v -> {
                 if (listener != null) {
                     listener.onScholarshipClick(scholarship);
@@ -87,6 +97,12 @@ public class ScholarshipAdapter extends ListAdapter<Scholarship, ScholarshipAdap
 
             itemView.setOnClickListener(clickListener);
             btnSeeMore.setOnClickListener(clickListener);
+
+            btnSave.setOnClickListener(v -> {
+                if (listener != null) {
+                    listener.onSaveClick(scholarship);
+                }
+            });
         }
     }
 }

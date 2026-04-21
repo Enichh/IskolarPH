@@ -36,6 +36,9 @@ public class Student {
     @ColumnInfo(name = "gpa")
     private double gpa;
 
+    @ColumnInfo(name = "course")
+    private String course; // e.g., "BSCS", "BSECE", "STEM"
+
     // Constructors
     public Student() {}
 
@@ -100,6 +103,9 @@ public class Student {
 
     public double getGpa() { return gpa; }
     public void setGpa(double gpa) { this.gpa = gpa; }
+
+    public String getCourse() { return course; }
+    public void setCourse(String course) { this.course = course; }
 
     // Password hashing method using SHA-256
     private String hashPassword(String password) {

@@ -1,20 +1,24 @@
 package com.example.iskolarphh.ui;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.ViewModelProvider;
 
+import com.example.iskolarphh.MainActivity;
 import com.example.iskolarphh.R;
 import com.example.iskolarphh.database.entity.Scholarship;
 import com.example.iskolarphh.repository.ScholarshipRepository;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 import java.util.Locale;
 
 public class ScholarshipDetailActivity extends AppCompatActivity {
 
     public static final String EXTRA_SCHOLARSHIP_ID = "extra_scholarship_id";
+    public static final String EXTRA_NAVIGATE_TO = "extra_navigate_to";
     private ScholarshipRepository repository;
 
     @Override
@@ -22,12 +26,43 @@ public class ScholarshipDetailActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_scholarshipdetails);
 
-        repository = new ScholarshipRepository(this);
+        repository = ScholarshipRepository.getInstance(this);
+
+        setupNavigation();
 
         int scholarshipId = getIntent().getIntExtra(EXTRA_SCHOLARSHIP_ID, -1);
         if (scholarshipId != -1) {
             repository.getScholarshipById(scholarshipId).observe(this, this::displayDetails);
         }
+    }
+
+    private void setupNavigation() {
+        BottomNavigationView bottomNav = findViewById(R.id.bottom_navigation);
+        bottomNav.setSelectedItemId(R.id.nav_search); // Detail is related to Catalog/Search
+        
+        bottomNav.setOnNavigationItemSelectedListener(item -> {
+            Intent intent = new Intent(this, MainActivity.class);
+            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+            
+            int id = item.getItemId();
+            if (id == R.id.nav_home) {
+                intent.putExtra(EXTRA_NAVIGATE_TO, R.id.nav_home);
+                startActivity(intent);
+                finish();
+                return true;
+            } else if (id == R.id.nav_search) {
+                intent.putExtra(EXTRA_NAVIGATE_TO, R.id.nav_search);
+                startActivity(intent);
+                finish();
+                return true;
+            } else if (id == R.id.nav_profile) {
+                intent.putExtra(EXTRA_NAVIGATE_TO, R.id.nav_profile);
+                startActivity(intent);
+                finish();
+                return true;
+            }
+            return false;
+        });
     }
 
     private void displayDetails(Scholarship scholarship) {

@@ -31,6 +31,9 @@ public class Scholarship {
     @ColumnInfo(name = "location")
     private String location; // (e.g., "Luzon", "Visayas", "Mindanao")
 
+    @ColumnInfo(name = "is_saved")
+    private boolean isSaved;
+
     @ColumnInfo(name = "is_active")
     private boolean isActive;
 
@@ -77,6 +80,9 @@ public class Scholarship {
 
     public String getLocation() { return location; }
     public void setLocation(String location) { this.location = location; }
+
+    public boolean isSaved() { return isSaved; }
+    public void setSaved(boolean saved) { isSaved = saved; }
 
     public boolean isActive() { return isActive; }
     public void setActive(boolean active) { isActive = active; }

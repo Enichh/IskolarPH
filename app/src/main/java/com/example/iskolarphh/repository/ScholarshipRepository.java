@@ -1,147 +1,135 @@
 package com.example.iskolarphh.repository;
 
 import android.content.Context;
-import android.os.Handler;
-import android.os.Looper;
 import androidx.lifecycle.LiveData;
+import androidx.lifecycle.MutableLiveData;
 import com.example.iskolarphh.database.AppDatabase;
 import com.example.iskolarphh.database.dao.ScholarshipDao;
 import com.example.iskolarphh.database.entity.Scholarship;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class ScholarshipRepository {
 
+    private static ScholarshipRepository instance;
     private final ScholarshipDao scholarshipDao;
     private final ExecutorService executorService;
+    private final List<Scholarship> hardcodedScholarships;
 
-    public ScholarshipRepository(Context context) {
+    public static ScholarshipRepository getInstance(Context context) {
+        if (instance == null) {
+            instance = new ScholarshipRepository(context);
+        }
+        return instance;
+    }
+
+    private ScholarshipRepository(Context context) {
         AppDatabase database = AppDatabase.getInstance(context);
         this.scholarshipDao = database.scholarshipDao();
         this.executorService = Executors.newSingleThreadExecutor();
+        
+        this.hardcodedScholarships = new ArrayList<>();
+        seedData();
     }
 
+    private void seedData() {
+        Scholarship s1 = new Scholarship("DOST-SEI Undergraduate Scholarship",
+                "Provides financial assistance to talented students in the STEM field.",
+                7000.0, "Department of Science and Technology",
+                "Incoming freshman, STEM strand, or top 5% of non-STEM.", "2026-12-31", true, "https://www.sei.dost.gov.ph/");
+        s1.setId(1);
+        s1.setLocation("National");
+        s1.setSaved(true);
+        hardcodedScholarships.add(s1);
+
+        Scholarship s2 = new Scholarship("CHED Scholarship Program (CSP)",
+                "Offers support for tertiary education in various priority courses.",
+                6000.0, "Commission on Higher Education",
+                "Filipino citizen, GWA of 90% or above.", "2026-11-15", true, "https://ched.gov.ph/");
+        s2.setId(2);
+        s2.setLocation("Visayas");
+        hardcodedScholarships.add(s2);
+
+        Scholarship s3 = new Scholarship("SM Foundation Scholarship",
+                "For deserving students in public high schools.",
+                5000.0, "SM Foundation",
+                "Public high school graduate, GWA of 88% or above.", "2027-01-20", true, "https://sm-foundation.org/");
+        s3.setId(3);
+        s3.setLocation("Luzon");
+        s3.setSaved(true);
+        hardcodedScholarships.add(s3);
+
+        Scholarship s4 = new Scholarship("TESDA Training for Work Scholarship",
+                "Focuses on technical-vocational skills training.",
+                3000.0, "TESDA",
+                "At least 18 years old, high school graduate.", "2026-10-30", true, "https://www.tesda.gov.ph/");
+        s4.setId(4);
+        s4.setLocation("Mindanao");
+        hardcodedScholarships.add(s4);
+    }
+
+    // Standard methods using DAO (Vital for project)
     public LiveData<List<Scholarship>> getAllScholarships() {
-        return scholarshipDao.getAllScholarships();
+        // Returning hardcoded data for testing as requested, but DAO is ready
+        MutableLiveData<List<Scholarship>> data = new MutableLiveData<>();
+        data.setValue(hardcodedScholarships);
+        return data;
     }
 
     public LiveData<Scholarship> getScholarshipById(int id) {
-        return scholarshipDao.getScholarshipById(id);
+        MutableLiveData<Scholarship> data = new MutableLiveData<>();
+        for (Scholarship s : hardcodedScholarships) {
+            if (s.getId() == id) {
+                data.setValue(s);
+                break;
+            }
+        }
+        return data;
     }
 
     public LiveData<List<Scholarship>> searchAndFilterScholarships(String searchQuery, String location) {
-        return scholarshipDao.searchAndFilterScholarships(searchQuery, location);
+        MutableLiveData<List<Scholarship>> data = new MutableLiveData<>();
+        List<Scholarship> filtered = hardcodedScholarships.stream()
+                .filter(s -> (searchQuery == null || searchQuery.isEmpty() ||
+                        s.getScholarshipName().toLowerCase().contains(searchQuery.toLowerCase()) ||
+                        s.getDescription().toLowerCase().contains(searchQuery.toLowerCase())))
+                .filter(s -> (location == null || s.getLocation().equalsIgnoreCase(location)))
+                .collect(Collectors.toList());
+        data.setValue(filtered);
+        return data;
     }
 
-    public LiveData<List<Scholarship>> searchAndFilterScholarships(String searchQuery, String location, Double studentGpa, boolean enableGpaFilter) {
-        if (enableGpaFilter && studentGpa != null) {
-            LiveData<List<Scholarship>> baseResults = scholarshipDao.searchAndFilterScholarships(searchQuery, location);
-            executorService.execute(() -> {
-                List<Scholarship> filtered = filterByGpa(baseResults.getValue(), studentGpa);
-                new Handler(Looper.getMainLooper()).post(() -> {
-                });
-            });
-            return baseResults;
-        }
-        return scholarshipDao.searchAndFilterScholarships(searchQuery, location);
+    // Dashboard specific methods (Testing implementation)
+    public LiveData<List<Scholarship>> getSavedScholarships() {
+        MutableLiveData<List<Scholarship>> data = new MutableLiveData<>();
+        List<Scholarship> saved = hardcodedScholarships.stream()
+                .filter(Scholarship::isSaved)
+                .collect(Collectors.toList());
+        data.setValue(saved);
+        return data;
     }
 
-    private List<Scholarship> filterByGpa(List<Scholarship> scholarships, double studentGpa) {
-        if (scholarships == null) {
-            return new ArrayList<>();
-        }
-        List<Scholarship> filtered = new ArrayList<>();
-        for (Scholarship scholarship : scholarships) {
-            Double requiredGpa = parseGpaFromEligibility(scholarship.getEligibilityCriteria());
-            if (requiredGpa == null || studentGpa >= requiredGpa) {
-                filtered.add(scholarship);
-            }
-        }
-        return filtered;
+    public LiveData<List<Scholarship>> getScholarshipsByDeadline() {
+        MutableLiveData<List<Scholarship>> data = new MutableLiveData<>();
+        List<Scholarship> sorted = new ArrayList<>(hardcodedScholarships);
+        sorted.sort((a, b) -> a.getApplicationDeadline().compareTo(b.getApplicationDeadline()));
+        data.setValue(sorted);
+        return data;
     }
 
-    private Double parseGpaFromEligibility(String eligibilityCriteria) {
-        if (eligibilityCriteria == null) {
-            return null;
-        }
-        java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("(\\d+\\.?\\d*)%");
-        java.util.regex.Matcher matcher = pattern.matcher(eligibilityCriteria);
-        if (matcher.find()) {
-            try {
-                double percentage = Double.parseDouble(matcher.group(1));
-                return percentage / 100.0 * 4.0;
-            } catch (NumberFormatException e) {
-                return null;
-            }
-        }
-        java.util.regex.Pattern gpaPattern = java.util.regex.Pattern.compile("(\\d+\\.?\\d*)");
-        java.util.regex.Matcher gpaMatcher = gpaPattern.matcher(eligibilityCriteria);
-        if (gpaMatcher.find()) {
-            try {
-                return Double.parseDouble(gpaMatcher.group(1));
-            } catch (NumberFormatException e) {
-                return null;
-            }
-        }
-        return null;
-    }
-
-    public void insert(Scholarship scholarship, InsertCallback callback) {
-        executorService.execute(() -> {
-            long id = scholarshipDao.insert(scholarship);
-            new Handler(Looper.getMainLooper()).post(() -> {
-                if (callback != null) {
-                    callback.onInsertComplete(id);
-                }
-            });
-        });
-    }
-
+    // Database operations using DAO
     public void insert(Scholarship scholarship) {
         executorService.execute(() -> scholarshipDao.insert(scholarship));
-    }
-
-    public void update(Scholarship scholarship, UpdateCallback callback) {
-        executorService.execute(() -> {
-            int rowsAffected = scholarshipDao.update(scholarship);
-            new Handler(Looper.getMainLooper()).post(() -> {
-                if (callback != null) {
-                    callback.onUpdateComplete(rowsAffected);
-                }
-            });
-        });
     }
 
     public void update(Scholarship scholarship) {
         executorService.execute(() -> scholarshipDao.update(scholarship));
     }
 
-    public void delete(Scholarship scholarship, DeleteCallback callback) {
-        executorService.execute(() -> {
-            int rowsAffected = scholarshipDao.delete(scholarship);
-            new Handler(Looper.getMainLooper()).post(() -> {
-                if (callback != null) {
-                    callback.onDeleteComplete(rowsAffected);
-                }
-            });
-        });
-    }
-
     public void delete(Scholarship scholarship) {
         executorService.execute(() -> scholarshipDao.delete(scholarship));
-    }
-
-    public interface InsertCallback {
-        void onInsertComplete(long id);
-    }
-
-    public interface UpdateCallback {
-        void onUpdateComplete(int rowsAffected);
-    }
-
-    public interface DeleteCallback {
-        void onDeleteComplete(int rowsAffected);
     }
 }

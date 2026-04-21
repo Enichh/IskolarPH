@@ -47,7 +47,7 @@ public class DashboardFragment extends Fragment {
         View view = inflater.inflate(R.layout.activity_dashboard, container, false);
 
         studentRepository = new StudentRepository(requireContext());
-        scholarshipRepository = new ScholarshipRepository(requireContext());
+        scholarshipRepository = ScholarshipRepository.getInstance(requireContext());
         firebaseAuth = FirebaseAuth.getInstance();
 
         initializeViews(view);
@@ -96,15 +96,31 @@ public class DashboardFragment extends Fragment {
         CardView cardDeadlines = view.findViewById(R.id.cardDeadlines);
 
         cardSaved.setOnClickListener(v -> {
-            Toast.makeText(requireContext(), "Saved scholarships feature coming soon", Toast.LENGTH_SHORT).show();
+            loadFilteredScholarships("Saved Scholarships", scholarshipRepository.getSavedScholarships());
         });
 
         cardCourse.setOnClickListener(v -> {
-            Toast.makeText(requireContext(), "My course feature coming soon", Toast.LENGTH_SHORT).show();
+            if (currentStudent != null && currentStudent.getCourse() != null) {
+                loadFilteredScholarships("For your Course: " + currentStudent.getCourse(), 
+                    scholarshipRepository.searchAndFilterScholarships(currentStudent.getCourse(), null));
+            } else {
+                Toast.makeText(requireContext(), "Please set your course in Profile first", Toast.LENGTH_SHORT).show();
+            }
         });
 
         cardDeadlines.setOnClickListener(v -> {
-            Toast.makeText(requireContext(), "Deadlines feature coming soon", Toast.LENGTH_SHORT).show();
+            loadFilteredScholarships("Upcoming Deadlines", scholarshipRepository.getScholarshipsByDeadline());
+        });
+    }
+
+    private void loadFilteredScholarships(String title, LiveData<List<Scholarship>> data) {
+        TextView tvTitle = getView().findViewById(R.id.tvRecommendationsTitle);
+        if (tvTitle != null) tvTitle.setText(title);
+        
+        data.observe(getViewLifecycleOwner(), scholarships -> {
+            if (scholarships != null) {
+                displayRecommendations(scholarships);
+            }
         });
     }
 
@@ -177,19 +193,40 @@ public class DashboardFragment extends Fragment {
 
     private void displayRecommendations(List<Scholarship> scholarships) {
         View view = getView();
-        if (view == null || scholarships.isEmpty()) {
+        if (view == null) {
             return;
         }
 
-        android.widget.ScrollView scrollView = view.findViewById(R.id.scrollView);
         LinearLayout scrollViewContent = view.findViewById(R.id.dashboardContent);
-        TextView recommendationsTitle = view.findViewById(R.id.tvRecommendationsTitle);
+        if (scrollViewContent == null) return;
 
-        if (scrollViewContent != null) {
-            for (Scholarship scholarship : scholarships) {
-                CardView scholarshipCard = createScholarshipCard(scholarship);
-                scrollViewContent.addView(scholarshipCard);
+        // Keep children up to tvRecommendationsTitle
+        int titleIndex = -1;
+        for (int i = 0; i < scrollViewContent.getChildCount(); i++) {
+            if (scrollViewContent.getChildAt(i).getId() == R.id.tvRecommendationsTitle) {
+                titleIndex = i;
+                break;
             }
+        }
+
+        // Remove old scholarship cards below the title
+        if (titleIndex != -1 && titleIndex < scrollViewContent.getChildCount() - 1) {
+            scrollViewContent.removeViews(titleIndex + 1, scrollViewContent.getChildCount() - (titleIndex + 1));
+        }
+
+        if (scholarships.isEmpty()) {
+            TextView emptyView = new TextView(requireContext());
+            emptyView.setText("No scholarships found for this category.");
+            emptyView.setTextColor(0xFFFFFFFF);
+            emptyView.setPadding(0, 32, 0, 0);
+            emptyView.setGravity(android.view.Gravity.CENTER);
+            scrollViewContent.addView(emptyView);
+            return;
+        }
+
+        for (Scholarship scholarship : scholarships) {
+            CardView scholarshipCard = createScholarshipCard(scholarship);
+            scrollViewContent.addView(scholarshipCard);
         }
     }
 
