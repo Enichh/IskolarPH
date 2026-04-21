@@ -3,7 +3,13 @@ package com.example.iskolarphh.service;
 import android.content.Context;
 import android.location.Address;
 import android.location.Geocoder;
+import android.location.Geocoder.GeocodeListener;
 import android.os.Build;
+import android.os.Handler;
+import android.os.Looper;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.RequiresApi;
 
 import com.example.iskolarphh.callback.LocationCallback;
 import com.example.iskolarphh.util.LocationConstants;
@@ -35,31 +41,54 @@ public class GeocoderService {
     }
     
     public void getLocationFromCoordinates(Context context, double latitude, double longitude, LocationCallback callback) {
-        executorService.execute(() -> {
-            try {
-                if (!Geocoder.isPresent()) {
-                    callback.onLocationError("Geocoder service not available");
-                    return;
+        if (!Geocoder.isPresent()) {
+            callback.onLocationError("Geocoder service not available");
+            return;
+        }
+
+        Geocoder geocoder = new Geocoder(context, Locale.getDefault());
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            getFromLocationAsync(geocoder, latitude, longitude, callback);
+        } else {
+            executorService.execute(() -> {
+                try {
+                    @SuppressWarnings("deprecation")
+                    List<Address> addresses = geocoder.getFromLocation(latitude, longitude, LocationConstants.MAX_GEOCODER_RESULTS);
+                    handleGeocodingResult(addresses, latitude, longitude, callback);
+                } catch (IOException e) {
+                    callback.onLocationError("Geocoder failed: " + e.getMessage());
+                } catch (Exception e) {
+                    callback.onLocationError("Error converting coordinates: " + e.getMessage());
                 }
-                
-                Geocoder geocoder = new Geocoder(context, Locale.getDefault());
-                List<Address> addresses = geocoder.getFromLocation(latitude, longitude, LocationConstants.MAX_GEOCODER_RESULTS);
-                
-                if (addresses == null || addresses.isEmpty()) {
-                    callback.onLocationError("No address found for given coordinates");
-                    return;
-                }
-                
-                Address address = addresses.get(0);
-                String locationString = buildLocationString(address);
-                callback.onLocationRetrieved(locationString, latitude, longitude);
-                
-            } catch (IOException e) {
-                callback.onLocationError("Geocoder failed: " + e.getMessage());
-            } catch (Exception e) {
-                callback.onLocationError("Error converting coordinates: " + e.getMessage());
+            });
+        }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+    private void getFromLocationAsync(Geocoder geocoder, double latitude, double longitude, LocationCallback callback) {
+        geocoder.getFromLocation(latitude, longitude, LocationConstants.MAX_GEOCODER_RESULTS, new GeocodeListener() {
+            @Override
+            public void onGeocode(@NonNull List<Address> addresses) {
+                handleGeocodingResult(addresses, latitude, longitude, callback);
+            }
+
+            @Override
+            public void onError(@NonNull String errorMessage) {
+                callback.onLocationError("Geocoder failed: " + errorMessage);
             }
         });
+    }
+
+    private void handleGeocodingResult(List<Address> addresses, double latitude, double longitude, LocationCallback callback) {
+        if (addresses == null || addresses.isEmpty()) {
+            callback.onLocationError("No address found for given coordinates");
+            return;
+        }
+
+        Address address = addresses.get(0);
+        String locationString = buildLocationString(address);
+        callback.onLocationRetrieved(locationString, latitude, longitude);
     }
     
     private String buildLocationString(Address address) {

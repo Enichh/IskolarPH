@@ -1,5 +1,4 @@
-# AI Assistant Context Files
-AI.md
+
 
 # Gradle files
 .gradle/
@@ -50,8 +49,9 @@ Thumbs.db
 /test-results/
 /androidTest-results/
 
-# Windsurf
-.windsurf/
+# Test folders
+/test/
+/androidTest/
 
 # Markdown files
 *.md

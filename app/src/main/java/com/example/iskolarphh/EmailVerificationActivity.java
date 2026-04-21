@@ -12,6 +12,7 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -38,6 +39,7 @@ public class EmailVerificationActivity extends AppCompatActivity {
 
     private CountDownTimer countDownTimer;
     private boolean isEmailSent = false;
+    private OnBackPressedCallback backPressedCallback;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -81,6 +83,16 @@ public class EmailVerificationActivity extends AppCompatActivity {
         if (!user.isEmailVerified() && !isEmailSent) {
             sendVerificationEmail();
         }
+
+        // Handle back press with new API - initialize once
+        backPressedCallback = new OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                // Prevent going back - user must verify email or logout
+                Toast.makeText(EmailVerificationActivity.this, "Please verify your email or logout", Toast.LENGTH_SHORT).show();
+            }
+        };
+        getOnBackPressedDispatcher().addCallback(this, backPressedCallback);
     }
 
     /**
@@ -275,11 +287,8 @@ public class EmailVerificationActivity extends AppCompatActivity {
         if (countDownTimer != null) {
             countDownTimer.cancel();
         }
-    }
-
-    @Override
-    public void onBackPressed() {
-        // Prevent going back - user must verify email or logout
-        Toast.makeText(this, "Please verify your email or logout", Toast.LENGTH_SHORT).show();
+        if (backPressedCallback != null) {
+            backPressedCallback.remove();
+        }
     }
 }

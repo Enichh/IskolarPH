@@ -21,9 +21,15 @@ public interface ScholarshipDao {
     LiveData<Scholarship> getScholarshipById(int id);
 
     @Query("SELECT * FROM scholarships WHERE " +
-            "(:searchQuery IS NULL OR scholarship_name LIKE '%' || :searchQuery || '%' OR description LIKE '%' || :searchQuery || '%') AND " +
-            "(:location IS NULL OR location = :location)")
+            "(:searchQuery IS NULL OR :searchQuery = '' OR scholarship_name LIKE '%' || :searchQuery || '%' OR description LIKE '%' || :searchQuery || '%') AND " +
+            "(:location IS NULL OR :location = '' OR location = :location)")
     LiveData<List<Scholarship>> searchAndFilterScholarships(String searchQuery, String location);
+
+    @Query("SELECT * FROM scholarships WHERE is_saved = 1")
+    LiveData<List<Scholarship>> getSavedScholarships();
+
+    @Query("SELECT * FROM scholarships ORDER BY application_deadline ASC")
+    LiveData<List<Scholarship>> getScholarshipsByDeadline();
 
     // UPDATE
     @Update

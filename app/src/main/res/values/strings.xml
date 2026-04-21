@@ -7,7 +7,7 @@
         for senior high or college at any STI College campus in the country.
     </string>
 
-    <string name="scholarship_details">
+    <string name="scholarship_details" formatted="false">
         • &lt;b&gt;Programs&lt;/b&gt;&lt;br/&gt;
             – Full or partial tuition fee coverage.&lt;br/&gt;&lt;br/&gt;
 
@@ -25,7 +25,7 @@
             ○ &lt;b&gt;Pag-IBIG Loyalty Cardholder:&lt;/b&gt; 10% tuition fee subsidy.
     </string>
 
-    <string name="important_notes">
+    <string name="important_notes" formatted="false">
         • Scholarships are non-transferable and apply only to the campus where the exam was taken.&lt;br/&gt;
         • Applicants must have no record of misconduct.&lt;br/&gt;
         • &lt;b&gt;Slots are limited.&lt;/b&gt;

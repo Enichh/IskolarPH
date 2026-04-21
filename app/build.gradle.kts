@@ -81,6 +81,13 @@ dependencies {
     implementation(libs.markwon.core)
     implementation(libs.markwon.strikethrough)
     implementation(libs.markwon.tables)
+
+    // Unit Testing
+    testImplementation("org.mockito:mockito-core:5.7.0")
+    testImplementation("org.mockito:mockito-inline:5.2.0")
+    testImplementation("org.robolectric:robolectric:4.11.1")
+    testImplementation("androidx.test:core:1.5.0")
+    testImplementation("androidx.arch.core:core-testing:2.2.0")
 }
 
 // Get API key from local.properties

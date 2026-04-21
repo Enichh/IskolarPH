@@ -2,6 +2,7 @@ package com.example.iskolarphh.database.entity;
 
 import androidx.room.ColumnInfo;
 import androidx.room.Entity;
+import androidx.room.Ignore;
 import androidx.room.PrimaryKey;
 
 import java.security.MessageDigest;
@@ -43,6 +44,7 @@ public class Student {
     public Student() {}
 
     // Constructor for initial registration with Firebase
+    @Ignore
     public Student(String firebaseUid, String firstName, String lastName, String middleInitial, 
                    String location, String email, String password, double gpa) {
         this.firebaseUid = firebaseUid;
@@ -56,6 +58,7 @@ public class Student {
     }
 
     // Constructor for Firebase registration (used by SignupActivity)
+    @Ignore
     public Student(String firebaseUid, String firstName, String lastName, String middleInitial, 
                    String location, double gpa) {
         this.firebaseUid = firebaseUid;

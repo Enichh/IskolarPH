@@ -145,6 +145,7 @@ public class CatalogFragment extends Fragment {
                 }
             });
         }
+        observeScholarships();
     }
 
     private void showLocationFilterDialog() {
@@ -174,15 +175,20 @@ public class CatalogFragment extends Fragment {
     }
 
     private void observeScholarships() {
-        String location = currentLocationFilter != null ? currentLocationFilter : LocationPreferences.getLastLocation(requireContext());
+        // Only use location filter if user explicitly selected it from the dialog
+        String locationFilter = currentLocationFilter;
         
-        scholarshipRepository.searchAndFilterScholarships(currentSearchQuery, location)
+        android.util.Log.d("CatalogFragment", "observeScholarships - searchQuery: '" + currentSearchQuery + "', location filter: '" + locationFilter + "'");
+        
+        scholarshipRepository.searchAndFilterScholarships(currentSearchQuery, locationFilter)
                 .observe(getViewLifecycleOwner(), scholarships -> {
+                    android.util.Log.d("CatalogFragment", "Scholarships received: " + (scholarships != null ? scholarships.size() : "null"));
                     if (adapter != null) {
                         List<Scholarship> filteredScholarships = scholarships;
                         if (gpaFilterEnabled && currentStudent != null) {
                             filteredScholarships = filterByGpa(scholarships, currentStudent.getGpa());
                         }
+                        android.util.Log.d("CatalogFragment", "Submitting to adapter: " + (filteredScholarships != null ? filteredScholarships.size() : "null"));
                         adapter.submitList(filteredScholarships);
                     }
                 });

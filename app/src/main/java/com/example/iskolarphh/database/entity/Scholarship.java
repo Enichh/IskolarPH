@@ -2,47 +2,61 @@ package com.example.iskolarphh.database.entity;
 
 import androidx.room.ColumnInfo;
 import androidx.room.Entity;
+import androidx.room.Ignore;
 import androidx.room.PrimaryKey;
+import com.google.gson.annotations.SerializedName;
 
 @Entity(tableName = "scholarships")
 public class Scholarship {
 
     @PrimaryKey(autoGenerate = true)
+    @SerializedName("id")
     private int id;
 
     @ColumnInfo(name = "scholarship_name")
+    @SerializedName("scholarship_name")
     private String scholarshipName;
 
     @ColumnInfo(name = "description")
+    @SerializedName("description")
     private String description;
 
     @ColumnInfo(name = "award_amount")
+    @SerializedName("award_amount")
     private double awardAmount;
 
     @ColumnInfo(name = "provider_organization")
+    @SerializedName("provider_organization")
     private String providerOrganization;
 
     @ColumnInfo(name = "eligibility_criteria")
+    @SerializedName("eligibility_criteria")
     private String eligibilityCriteria;
 
     @ColumnInfo(name = "application_deadline")
+    @SerializedName("application_deadline")
     private String applicationDeadline; // Stored as ISO 8601 string (e.g., "2026-12-31")
 
     @ColumnInfo(name = "location")
+    @SerializedName("location")
     private String location; // (e.g., "Luzon", "Visayas", "Mindanao")
 
     @ColumnInfo(name = "is_saved")
+    @SerializedName("is_saved")
     private boolean isSaved;
 
     @ColumnInfo(name = "is_active")
+    @SerializedName("is_active")
     private boolean isActive;
 
     @ColumnInfo(name = "application_url")
+    @SerializedName("application_url")
     private String applicationUrl;
 
     // Constructors
     public Scholarship() {}
 
+    @Ignore
     public Scholarship(String scholarshipName, String description, double awardAmount,
                        String providerOrganization, String eligibilityCriteria,
                        String applicationDeadline, boolean isActive, String applicationUrl) {
