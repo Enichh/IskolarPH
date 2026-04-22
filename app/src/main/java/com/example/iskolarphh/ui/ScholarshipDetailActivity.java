@@ -34,6 +34,12 @@ public class ScholarshipDetailActivity extends AppCompatActivity {
         if (scholarshipId != -1) {
             repository.getScholarshipById(scholarshipId).observe(this, this::displayDetails);
         }
+        // ✅ ADD THIS PART (Back button function)
+        android.widget.ImageView btnBack = findViewById(R.id.btn_back); // get the back button from XML
+
+        btnBack.setOnClickListener(v -> {
+            finish(); // go back to previous activity (activity_catalog)
+        });
     }
 
     private void setupNavigation() {
