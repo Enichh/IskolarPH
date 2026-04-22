@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#154284"
+    android:background="#001F3F"
     tools:context=".MainActivity">
 
     <!-- Header Section -->
@@ -43,7 +43,7 @@
                 android:layout_height="32dp"
                 android:layout_marginEnd="8dp"
                 android:scaleType="centerCrop"
-                android:src="@android:drawable/sym_def_app_icon" />
+                android:src="@drawable/logo_iskolar_ph" />
 
             <TextView
                 android:id="@+id/tvHeaderName"
