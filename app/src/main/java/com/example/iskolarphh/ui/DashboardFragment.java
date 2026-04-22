@@ -37,8 +37,6 @@ public class DashboardFragment extends Fragment {
     private ScholarshipRepository scholarshipRepository;
     private FirebaseAuth firebaseAuth;
     private Student currentStudent;
-    private ScholarshipAdapter recommendationAdapter;
-    private RecyclerView rvRecommendations;
 
     @Nullable
     @Override
@@ -59,10 +57,6 @@ public class DashboardFragment extends Fragment {
 
     private void initializeViews(View view) {
         TextView tvWelcome = view.findViewById(R.id.tvWelcome);
-        rvRecommendations = new RecyclerView(requireContext());
-        rvRecommendations.setLayoutManager(new LinearLayoutManager(requireContext()));
-        
-        LinearLayout recommendationsContainer = view.findViewById(R.id.rootLayout).findViewById(android.R.id.content);
     }
 
     private void loadStudentData() {
@@ -83,7 +77,10 @@ public class DashboardFragment extends Fragment {
     }
 
     private void personalizeWelcome() {
-        TextView tvWelcome = getView().findViewById(R.id.tvWelcome);
+        View view = getView();
+        if (view == null) return;
+        
+        TextView tvWelcome = view.findViewById(R.id.tvWelcome);
         if (currentStudent != null && tvWelcome != null) {
             String firstName = currentStudent.getFirstName();
             tvWelcome.setText("Welcome, " + firstName + "!");
@@ -114,7 +111,10 @@ public class DashboardFragment extends Fragment {
     }
 
     private void loadFilteredScholarships(String title, LiveData<List<Scholarship>> data) {
-        TextView tvTitle = getView().findViewById(R.id.tvRecommendationsTitle);
+        View view = getView();
+        if (view == null) return;
+        
+        TextView tvTitle = view.findViewById(R.id.tvRecommendationsTitle);
         if (tvTitle != null) tvTitle.setText(title);
         
         data.observe(getViewLifecycleOwner(), scholarships -> {

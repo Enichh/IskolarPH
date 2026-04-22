@@ -16,6 +16,9 @@ public interface ScholarshipDao {
     @Query("SELECT * FROM scholarships")
     LiveData<List<Scholarship>> getAllScholarships();
 
+    @Query("SELECT * FROM scholarships")
+    List<Scholarship> getAllScholarshipsSync();
+
     // READ (SINGLE)
     @Query("SELECT * FROM scholarships WHERE id = :id LIMIT 1")
     LiveData<Scholarship> getScholarshipById(int id);

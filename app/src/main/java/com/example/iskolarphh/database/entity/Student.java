@@ -40,12 +40,18 @@ public class Student {
     @ColumnInfo(name = "course")
     private String course; // e.g., "BSCS", "BSECE", "STEM"
 
+    @ColumnInfo(name = "college")
+    private String college; // School / University
+
+    @ColumnInfo(name = "contact_number")
+    private String contactNumber; // Contact Number
+
     // Constructors
     public Student() {}
 
     // Constructor for initial registration with Firebase
     @Ignore
-    public Student(String firebaseUid, String firstName, String lastName, String middleInitial, 
+    public Student(String firebaseUid, String firstName, String lastName, String middleInitial,
                    String location, String email, String password, double gpa) {
         this.firebaseUid = firebaseUid;
         this.firstName = firstName;
@@ -59,7 +65,7 @@ public class Student {
 
     // Constructor for Firebase registration (used by SignupActivity)
     @Ignore
-    public Student(String firebaseUid, String firstName, String lastName, String middleInitial, 
+    public Student(String firebaseUid, String firstName, String lastName, String middleInitial,
                    String location, double gpa) {
         this.firebaseUid = firebaseUid;
         this.firstName = firstName;
@@ -68,7 +74,6 @@ public class Student {
         this.location = location;
         this.gpa = gpa;
     }
-
 
     public int getId() { return id; }
     public void setId(int id) { this.id = id; }
@@ -109,6 +114,12 @@ public class Student {
 
     public String getCourse() { return course; }
     public void setCourse(String course) { this.course = course; }
+
+    public String getCollege() { return college; }
+    public void setCollege(String college) { this.college = college; }
+
+    public String getContactNumber() { return contactNumber; }
+    public void setContactNumber(String contactNumber) { this.contactNumber = contactNumber; }
 
     // Password hashing method using SHA-256
     private String hashPassword(String password) {

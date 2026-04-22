@@ -49,12 +49,35 @@ public abstract class AppDatabase extends RoomDatabase {
                                         seedScholarships(scholarshipDao, appContext);
                                     });
                                 }
+
+                                @Override
+                                public void onOpen(androidx.sqlite.db.SupportSQLiteDatabase db) {
+                                    super.onOpen(db);
+                                    databaseWriteExecutor.execute(() -> {
+                                        ScholarshipDao scholarshipDao = INSTANCE.scholarshipDao();
+                                        checkAndSeedScholarships(scholarshipDao, appContext);
+                                    });
+                                }
                             })
                             .build();
                 }
             }
         }
         return INSTANCE;
+    }
+
+    private static void checkAndSeedScholarships(ScholarshipDao scholarshipDao, Context context) {
+        try {
+            List<Scholarship> scholarships = scholarshipDao.getAllScholarshipsSync();
+            if (scholarships == null || scholarships.isEmpty()) {
+                android.util.Log.d("AppDatabase", "Database is empty, seeding scholarships");
+                seedScholarships(scholarshipDao, context);
+            } else {
+                android.util.Log.d("AppDatabase", "Database has " + scholarships.size() + " scholarships, skipping seed");
+            }
+        } catch (Exception e) {
+            android.util.Log.e("AppDatabase", "Error checking scholarships", e);
+        }
     }
 
     private static void seedScholarships(ScholarshipDao scholarshipDao, Context context) {

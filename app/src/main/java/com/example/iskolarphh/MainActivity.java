@@ -116,6 +116,8 @@ public class MainActivity extends AppCompatActivity {
             LocationPreferences.setLocationGranted(this, true);
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 fetchUserLocation();
+            } else {
+                LocationPreferences.saveLocation(this, LocationConstants.DEFAULT_LOCATION, LocationConstants.LOCATION_SOURCE_MANUAL);
             }
         }
     }

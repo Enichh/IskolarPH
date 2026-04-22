@@ -6,7 +6,8 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="#001F3F">
+    android:background="#001F3F"
+    android:fitsSystemWindows="true">
 
     <!-- HEADER -->
     <RelativeLayout
@@ -199,5 +200,6 @@
         android:layout_weight="1"
         android:clipToPadding="false"
         android:paddingHorizontal="12dp"
-        android:paddingTop="8dp" />
+        android:paddingTop="8dp"
+        android:paddingBottom="106dp" />
 </LinearLayout>
