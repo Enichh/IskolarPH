@@ -18,6 +18,20 @@
         android:padding="16dp"
         app:layout_constraintTop_toTopOf="parent">
 
+        <!-- Back Button -->
+        <ImageView
+            android:id="@+id/btn_back"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_alignParentStart="true"
+            android:layout_centerVertical="true"
+            android:src="@drawable/ic_back"
+            app:tint="#FFFFFF"
+            android:contentDescription="Back"
+            android:clickable="true"
+            android:focusable="true"
+            android:background="?attr/selectableItemBackgroundBorderless"/>
+
         <!-- Centered Logo and Text -->
         <LinearLayout
             android:layout_width="wrap_content"
