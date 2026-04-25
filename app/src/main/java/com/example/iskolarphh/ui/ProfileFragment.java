@@ -1,6 +1,11 @@
 package com.example.iskolarphh.ui;
 
+import android.Manifest;
+import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
 import android.os.Bundle;
+import android.provider.MediaStore;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -13,8 +18,11 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.Observer;
@@ -43,6 +51,8 @@ public class ProfileFragment extends Fragment {
     private TextView tvCourseDisplay;
     private TextView tvCollegeDisplay;
     private TextView tvContactDisplay;
+    private ImageView ivProfilePicture;
+    private ImageView btnChangePhoto;
     private EditText etFullName;
     private EditText etGPA;
     private EditText etLocation;
@@ -59,6 +69,42 @@ public class ProfileFragment extends Fragment {
 
     private boolean isEditMode = false;
     private boolean isDarkTheme = false;
+
+    private ActivityResultLauncher<Intent> cameraLauncher;
+    private ActivityResultLauncher<String> cameraPermissionLauncher;
+
+    @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        
+        // Register Camera Permission Launcher
+        cameraPermissionLauncher = registerForActivityResult(
+            new ActivityResultContracts.RequestPermission(),
+            isGranted -> {
+                if (isGranted) {
+                    openCamera();
+                } else {
+                    Toast.makeText(requireContext(), "Camera permission is required to change photo", Toast.LENGTH_SHORT).show();
+                }
+            }
+        );
+
+        // Register Camera Launcher
+        cameraLauncher = registerForActivityResult(
+            new ActivityResultContracts.StartActivityForResult(),
+            result -> {
+                if (result.getResultCode() == android.app.Activity.RESULT_OK && result.getData() != null) {
+                    Bundle extras = result.getData().getExtras();
+                    if (extras != null) {
+                        Bitmap imageBitmap = (Bitmap) extras.get("data");
+                        if (ivProfilePicture != null && imageBitmap != null) {
+                            ivProfilePicture.setImageBitmap(imageBitmap);
+                        }
+                    }
+                }
+            }
+        );
+    }
 
     @Nullable
     @Override
@@ -88,6 +134,8 @@ public class ProfileFragment extends Fragment {
         etGPA = view.findViewById(R.id.etGPA);
         etLocation = view.findViewById(R.id.etLocation);
         etEmail = view.findViewById(R.id.etEmail);
+        ivProfilePicture = view.findViewById(R.id.ivProfilePicture);
+        btnChangePhoto = view.findViewById(R.id.btnChangePhoto);
         btnUpdate = view.findViewById(R.id.btnUpdate);
         btnExit = view.findViewById(R.id.btnExit);
         btnUseCurrentLocation = view.findViewById(R.id.btnUseCurrentLocation);
@@ -201,6 +249,13 @@ public class ProfileFragment extends Fragment {
             @Override
             public void onClick(View v) {
                 toggleEditMode();
+            }
+        });
+
+        btnChangePhoto.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                checkCameraPermission();
             }
         });
     }
@@ -367,6 +422,24 @@ public class ProfileFragment extends Fragment {
         setEditMode(!isEditMode);
     }
 
+    private void checkCameraPermission() {
+        if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.CAMERA)
+                == PackageManager.PERMISSION_GRANTED) {
+            openCamera();
+        } else {
+            cameraPermissionLauncher.launch(Manifest.permission.CAMERA);
+        }
+    }
+
+    private void openCamera() {
+        Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+        try {
+            cameraLauncher.launch(takePictureIntent);
+        } catch (Exception e) {
+            Toast.makeText(requireContext(), "No camera app found", Toast.LENGTH_SHORT).show();
+        }
+    }
+
     @Override
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
         if (requestCode == LocationConstants.LOCATION_PERMISSION_REQUEST_CODE) {
@@ -399,7 +472,6 @@ public class ProfileFragment extends Fragment {
         }
 
         // Toggle photo change button visibility
-        ImageView btnChangePhoto = rootView.findViewById(R.id.btnChangePhoto);
         if (btnChangePhoto != null) {
             btnChangePhoto.setVisibility(editMode ? View.VISIBLE : View.GONE);
         }
