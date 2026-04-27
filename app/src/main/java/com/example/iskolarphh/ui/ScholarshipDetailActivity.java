@@ -26,7 +26,7 @@ public class ScholarshipDetailActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_scholarshipdetails);
 
-        repository = ScholarshipRepository.getInstance(this);
+        repository = new ScholarshipRepository(this);
 
         setupNavigation();
 

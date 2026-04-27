@@ -21,41 +21,70 @@ import com.example.iskolarphh.ui.DashboardFragment;
 import com.example.iskolarphh.ui.ProfileFragment;
 import com.example.iskolarphh.ui.LocationPermissionDialog;
 import com.example.iskolarphh.ui.ChatbotDialog;
+import com.example.iskolarphh.service.LocationFlowManager;
 import com.example.iskolarphh.service.LocationManager;
-import com.example.iskolarphh.service.LocationPermissionHandler;
 import com.example.iskolarphh.service.GeocoderService;
-import com.example.iskolarphh.callback.LocationCallback;
-import com.example.iskolarphh.util.LocationConstants;
-import com.example.iskolarphh.util.LocationPreferences;
 import com.example.iskolarphh.repository.StudentRepository;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.example.iskolarphh.util.LocationConstants;
+import com.example.iskolarphh.util.LocationPreferences;
+import com.example.iskolarphh.util.PerformanceMonitor;
 
 public class MainActivity extends AppCompatActivity {
 
     private static final String PREF_DIALOG_SHOWN = "location_dialog_shown";
     private BottomNavigationView bottomNav;
+    private LocationFlowManager locationFlowManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        long startTime = System.nanoTime();
+        
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
 
-        bottomNav = findViewById(R.id.bottom_navigation);
-        bottomNav.setOnItemSelectedListener(navListener);
+        // Start performance monitoring
+        PerformanceMonitor.startMonitoring();
+        PerformanceMonitor.logMemoryUsage("MainActivity.onCreate()");
 
+        initializeViews();
+        setupListeners();
+        initializeLocationManager();
+        checkLocationPermissionFlow();
+        handleInitialNavigation();
+        
+        PerformanceMonitor.logMethodExecutionTime("MainActivity.onCreate()", startTime);
+    }
+
+    private void initializeViews() {
+        bottomNav = findViewById(R.id.bottom_navigation);
+    }
+
+    private void setupListeners() {
+        bottomNav.setOnItemSelectedListener(navListener);
+        
         FloatingActionButton fabChat = findViewById(R.id.fabChat);
         fabChat.setOnClickListener(v -> {
             ChatbotDialog dialog = new ChatbotDialog();
             dialog.show(getSupportFragmentManager(), "ChatbotDialog");
         });
+    }
 
-        checkLocationPermissionFlow();
+    private void initializeLocationManager() {
+        // Lazy initialization to avoid blocking main thread
+        new android.os.Handler().post(() -> {
+            locationFlowManager = new LocationFlowManager(this, 
+                new LocationManager(), 
+                new GeocoderService(), 
+                new StudentRepository(this));
+        });
+    }
 
-        // Handle navigation from other activities
+    private void handleInitialNavigation() {
         if (getIntent().hasExtra("extra_navigate_to")) {
             handleIntentNavigation(getIntent());
         } else {
@@ -95,11 +124,10 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void showLocationPermissionDialog() {
-        LocationPermissionDialog.show(this, new LocationPermissionDialog.LocationPermissionCallback() {
+        locationFlowManager.checkAndRequestLocationPermission(this, new LocationPermissionDialog.LocationPermissionCallback() {
             @Override
             public void onPermissionAllowed() {
-                LocationPermissionHandler.checkAndRequestLocationPermissions(MainActivity.this,
-                        LocationConstants.LOCATION_PERMISSION_REQUEST_CODE);
+                locationFlowManager.requestLocationPermissions(MainActivity.this, LocationConstants.LOCATION_PERMISSION_REQUEST_CODE);
             }
 
             @Override
@@ -112,57 +140,10 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode == LocationConstants.LOCATION_PERMISSION_REQUEST_CODE) {
-            LocationPreferences.setLocationGranted(this, true);
-            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                fetchUserLocation();
-            } else {
-                LocationPreferences.saveLocation(this, LocationConstants.DEFAULT_LOCATION, LocationConstants.LOCATION_SOURCE_MANUAL);
-            }
-        }
+        locationFlowManager.handlePermissionResult(requestCode, permissions, grantResults, null);
     }
 
-    private void fetchUserLocation() {
-        FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
-        if (firebaseUser == null) {
-            return;
-        }
 
-        LocationManager.getInstance().requestSingleLocationUpdate(this, new LocationCallback() {
-            @Override
-            public void onLocationRetrieved(String location, double latitude, double longitude) {
-                GeocoderService.getInstance().getLocationFromCoordinates(MainActivity.this, latitude, longitude, new LocationCallback() {
-                    @Override
-                    public void onLocationRetrieved(String locationString, double lat, double lng) {
-                        LocationPreferences.saveLocation(MainActivity.this, locationString, LocationConstants.LOCATION_SOURCE_GPS);
-                        StudentRepository studentRepository = new StudentRepository(MainActivity.this);
-                        studentRepository.updateLocation(firebaseUser.getUid(), locationString, rowsAffected -> {
-                        });
-                    }
-
-                    @Override
-                    public void onLocationError(String errorMessage) {
-                        LocationPreferences.saveLocation(MainActivity.this, LocationConstants.DEFAULT_LOCATION, LocationConstants.LOCATION_SOURCE_MANUAL);
-                    }
-
-                    @Override
-                    public void onPermissionDenied() {
-                        LocationPreferences.saveLocation(MainActivity.this, LocationConstants.DEFAULT_LOCATION, LocationConstants.LOCATION_SOURCE_MANUAL);
-                    }
-                });
-            }
-
-            @Override
-            public void onLocationError(String errorMessage) {
-                LocationPreferences.saveLocation(MainActivity.this, LocationConstants.DEFAULT_LOCATION, LocationConstants.LOCATION_SOURCE_MANUAL);
-            }
-
-            @Override
-            public void onPermissionDenied() {
-                LocationPreferences.saveLocation(MainActivity.this, LocationConstants.DEFAULT_LOCATION, LocationConstants.LOCATION_SOURCE_MANUAL);
-            }
-        });
-    }
 
     private BottomNavigationView.OnItemSelectedListener navListener = new BottomNavigationView.OnItemSelectedListener() {
         @Override
@@ -188,4 +169,10 @@ public class MainActivity extends AppCompatActivity {
             return true;
         }
     };
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        PerformanceMonitor.stopMonitoring();
+    }
 }

@@ -14,29 +14,30 @@ import androidx.annotation.Nullable;
 import androidx.cardview.widget.CardView;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.LiveData;
-import androidx.lifecycle.Observer;
+
+import com.example.iskolarphh.database.entity.Scholarship;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import androidx.lifecycle.ViewModelProvider;
+
+import com.example.iskolarphh.R;
+import com.example.iskolarphh.di.ViewModelFactory;
+import com.example.iskolarphh.viewmodel.DashboardViewModel;
+import com.example.iskolarphh.adapter.ScholarshipAdapter;
+import com.example.iskolarphh.util.PerformanceMonitor;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.example.iskolarphh.R;
-import com.example.iskolarphh.database.entity.Scholarship;
-import com.example.iskolarphh.database.entity.Student;
-import com.example.iskolarphh.repository.ScholarshipRepository;
-import com.example.iskolarphh.repository.StudentRepository;
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
 public class DashboardFragment extends Fragment {
 
-    private StudentRepository studentRepository;
-    private ScholarshipRepository scholarshipRepository;
-    private FirebaseAuth firebaseAuth;
-    private Student currentStudent;
+    private DashboardViewModel dashboardViewModel;
+    private ExecutorService executorService;
+    private android.os.Handler mainHandler;
+    private ScholarshipAdapter scholarshipAdapter;
+    private RecyclerView recyclerView;
+    private TextView tvEmptyState;
 
     @Nullable
     @Override
@@ -44,47 +45,72 @@ public class DashboardFragment extends Fragment {
             @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.activity_dashboard, container, false);
 
-        studentRepository = new StudentRepository(requireContext());
-        scholarshipRepository = ScholarshipRepository.getInstance(requireContext());
-        firebaseAuth = FirebaseAuth.getInstance();
+        // Initialize modern threading
+        executorService = Executors.newSingleThreadExecutor();
+        mainHandler = new android.os.Handler(android.os.Looper.getMainLooper());
+
+        ViewModelFactory factory = new ViewModelFactory(requireActivity().getApplication());
+        dashboardViewModel = new ViewModelProvider(this, factory).get(DashboardViewModel.class);
 
         initializeViews(view);
-        loadStudentData();
+        observeViewModel();
         setupCardListeners(view);
 
         return view;
     }
 
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        if (executorService != null && !executorService.isShutdown()) {
+            executorService.shutdown();
+        }
+    }
+
     private void initializeViews(View view) {
         TextView tvWelcome = view.findViewById(R.id.tvWelcome);
-    }
-
-    private void loadStudentData() {
-        FirebaseUser firebaseUser = firebaseAuth.getCurrentUser();
-        if (firebaseUser != null) {
-            LiveData<Student> studentLiveData = studentRepository.getStudentByFirebaseUid(firebaseUser.getUid());
-            studentLiveData.observe(getViewLifecycleOwner(), new Observer<Student>() {
-                @Override
-                public void onChanged(Student student) {
-                    if (student != null) {
-                        currentStudent = student;
-                        personalizeWelcome();
-                        loadRecommendations();
-                    }
-                }
-            });
-        }
-    }
-
-    private void personalizeWelcome() {
-        View view = getView();
-        if (view == null) return;
         
-        TextView tvWelcome = view.findViewById(R.id.tvWelcome);
-        if (currentStudent != null && tvWelcome != null) {
-            String firstName = currentStudent.getFirstName();
-            tvWelcome.setText("Welcome, " + firstName + "!");
-        }
+        // Initialize RecyclerView
+        recyclerView = view.findViewById(R.id.recyclerViewScholarships);
+        tvEmptyState = view.findViewById(R.id.tvEmptyState);
+        
+        // Setup RecyclerView with optimized configuration
+        scholarshipAdapter = new ScholarshipAdapter();
+        recyclerView.setAdapter(scholarshipAdapter);
+        recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
+        
+        // Optimize RecyclerView performance
+        // Note: setHasFixedSize(false) because RecyclerView height is wrap_content
+        recyclerView.setHasFixedSize(false);
+        recyclerView.setItemViewCacheSize(20);
+        recyclerView.setDrawingCacheEnabled(true);
+        recyclerView.setDrawingCacheQuality(View.DRAWING_CACHE_QUALITY_HIGH);
+    }
+
+    private void observeViewModel() {
+        dashboardViewModel.loadStudentData();
+
+        dashboardViewModel.getWelcomeMessage().observe(getViewLifecycleOwner(), message -> {
+            View view = getView();
+            if (view != null) {
+                TextView tvWelcome = view.findViewById(R.id.tvWelcome);
+                if (tvWelcome != null && message != null) {
+                    tvWelcome.setText(message);
+                }
+            }
+        });
+
+        dashboardViewModel.getRecommendedScholarships().observe(getViewLifecycleOwner(), scholarships -> {
+            if (scholarships != null) {
+                displayRecommendations(scholarships);
+            }
+        });
+
+        dashboardViewModel.getErrorMessage().observe(getViewLifecycleOwner(), error -> {
+            if (error != null && !error.isEmpty()) {
+                Toast.makeText(requireContext(), error, Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     private void setupCardListeners(View view) {
@@ -93,20 +119,23 @@ public class DashboardFragment extends Fragment {
         CardView cardDeadlines = view.findViewById(R.id.cardDeadlines);
 
         cardSaved.setOnClickListener(v -> {
-            loadFilteredScholarships("Saved Scholarships", scholarshipRepository.getSavedScholarships());
+            loadFilteredScholarships("Saved Scholarships", dashboardViewModel.getSavedScholarships());
         });
 
         cardCourse.setOnClickListener(v -> {
-            if (currentStudent != null && currentStudent.getCourse() != null) {
-                loadFilteredScholarships("For your Course: " + currentStudent.getCourse(), 
-                    scholarshipRepository.searchAndFilterScholarships(currentStudent.getCourse(), null));
-            } else {
-                Toast.makeText(requireContext(), "Please set your course in Profile first", Toast.LENGTH_SHORT).show();
-            }
+            LiveData<com.example.iskolarphh.database.entity.Student> studentLiveData = dashboardViewModel.getCurrentStudent();
+            studentLiveData.observe(getViewLifecycleOwner(), student -> {
+                if (student != null && student.getCourse() != null) {
+                    loadFilteredScholarships("For your Course: " + student.getCourse(), 
+                        dashboardViewModel.searchByCourse(student.getCourse()));
+                } else {
+                    Toast.makeText(requireContext(), "Please set your course in Profile first", Toast.LENGTH_SHORT).show();
+                }
+            });
         });
 
         cardDeadlines.setOnClickListener(v -> {
-            loadFilteredScholarships("Upcoming Deadlines", scholarshipRepository.getScholarshipsByDeadline());
+            loadFilteredScholarships("Upcoming Deadlines", dashboardViewModel.getScholarshipsByDeadline());
         });
     }
 
@@ -124,172 +153,29 @@ public class DashboardFragment extends Fragment {
         });
     }
 
-    private void loadRecommendations() {
-        if (currentStudent == null) {
-            return;
-        }
 
-        scholarshipRepository.getAllScholarships().observe(getViewLifecycleOwner(), scholarships -> {
-            if (scholarships != null) {
-                List<Scholarship> recommended = getRecommendedScholarships(scholarships, currentStudent);
-                displayRecommendations(recommended);
-            }
-        });
-    }
-
-    private List<Scholarship> getRecommendedScholarships(List<Scholarship> allScholarships, Student student) {
-        List<Scholarship> recommended = new ArrayList<>();
-        
-        for (Scholarship scholarship : allScholarships) {
-            Double requiredGpa = parseGpaFromEligibility(scholarship.getEligibilityCriteria());
-            
-            boolean gpaMatch = (requiredGpa == null || student.getGpa() >= requiredGpa);
-            boolean locationMatch = (scholarship.getLocation().equalsIgnoreCase("National") || 
-                                   scholarship.getLocation().equalsIgnoreCase(student.getLocation()) ||
-                                   student.getLocation() == null);
-            
-            if (gpaMatch && locationMatch && scholarship.isActive()) {
-                recommended.add(scholarship);
-            }
-        }
-        
-        if (recommended.size() > 3) {
-            return recommended.subList(0, 3);
-        }
-        
-        return recommended;
-    }
-
-    private Double parseGpaFromEligibility(String eligibilityCriteria) {
-        if (eligibilityCriteria == null) {
-            return null;
-        }
-        
-        Pattern pattern = Pattern.compile("(\\d+\\.?\\d*)%");
-        Matcher matcher = pattern.matcher(eligibilityCriteria);
-        
-        if (matcher.find()) {
-            try {
-                double percentage = Double.parseDouble(matcher.group(1));
-                return percentage / 100.0 * 4.0;
-            } catch (NumberFormatException e) {
-                return null;
-            }
-        }
-        
-        Pattern gpaPattern = Pattern.compile("(\\d+\\.?\\d*)");
-        Matcher gpaMatcher = gpaPattern.matcher(eligibilityCriteria);
-        
-        if (gpaMatcher.find()) {
-            try {
-                return Double.parseDouble(gpaMatcher.group(1));
-            } catch (NumberFormatException e) {
-                return null;
-            }
-        }
-        
-        return null;
-    }
 
     private void displayRecommendations(List<Scholarship> scholarships) {
-        View view = getView();
-        if (view == null) {
-            return;
-        }
-
-        LinearLayout scrollViewContent = view.findViewById(R.id.dashboardContent);
-        if (scrollViewContent == null) return;
-
-        // Keep children up to tvRecommendationsTitle
-        int titleIndex = -1;
-        for (int i = 0; i < scrollViewContent.getChildCount(); i++) {
-            if (scrollViewContent.getChildAt(i).getId() == R.id.tvRecommendationsTitle) {
-                titleIndex = i;
-                break;
-            }
-        }
-
-        // Remove old scholarship cards below the title
-        if (titleIndex != -1 && titleIndex < scrollViewContent.getChildCount() - 1) {
-            scrollViewContent.removeViews(titleIndex + 1, scrollViewContent.getChildCount() - (titleIndex + 1));
-        }
-
-        if (scholarships.isEmpty()) {
-            TextView emptyView = new TextView(requireContext());
-            emptyView.setText("No scholarships found for this category.");
-            emptyView.setTextColor(0xFFFFFFFF);
-            emptyView.setPadding(0, 32, 0, 0);
-            emptyView.setGravity(android.view.Gravity.CENTER);
-            scrollViewContent.addView(emptyView);
-            return;
-        }
-
-        for (Scholarship scholarship : scholarships) {
-            CardView scholarshipCard = createScholarshipCard(scholarship);
-            scrollViewContent.addView(scholarshipCard);
+        long startTime = System.nanoTime();
+        
+        // Use RecyclerView for efficient view recycling
+        if (scholarships == null || scholarships.isEmpty()) {
+            // Show empty state
+            recyclerView.setVisibility(View.GONE);
+            tvEmptyState.setVisibility(View.VISIBLE);
+        } else {
+            // Show scholarships
+            recyclerView.setVisibility(View.VISIBLE);
+            tvEmptyState.setVisibility(View.GONE);
+            
+            // Update adapter data efficiently
+            scholarshipAdapter.updateScholarships(scholarships);
+            
+            // Log performance metrics
+            PerformanceMonitor.logMethodExecutionTime("DashboardFragment.displayRecommendations()", startTime);
+            PerformanceMonitor.logMemoryUsage("After RecyclerView update");
         }
     }
 
-    private CardView createScholarshipCard(Scholarship scholarship) {
-        CardView cardView = new CardView(requireContext());
-        cardView.setCardBackgroundColor(0xFFFFFFFF);
-        cardView.setCardElevation(4);
-        cardView.setRadius(16);
-        
-        LinearLayout.LayoutParams cardParams = new LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT,
-            LinearLayout.LayoutParams.WRAP_CONTENT
-        );
-        cardParams.setMargins(0, 16, 0, 0);
-        cardView.setLayoutParams(cardParams);
-        
-        cardView.setClickable(true);
-        cardView.setFocusable(true);
-        cardView.setOnClickListener(v -> {
-            Intent intent = new Intent(requireActivity(), ScholarshipDetailActivity.class);
-            intent.putExtra(ScholarshipDetailActivity.EXTRA_SCHOLARSHIP_ID, scholarship.getId());
-            startActivity(intent);
-        });
-        
-        LinearLayout innerLayout = new LinearLayout(requireContext());
-        innerLayout.setOrientation(LinearLayout.HORIZONTAL);
-        innerLayout.setPadding(16, 16, 16, 16);
-        cardView.addView(innerLayout);
-        
-        android.widget.ImageView imageView = new android.widget.ImageView(requireContext());
-        LinearLayout.LayoutParams imageParams = new LinearLayout.LayoutParams(70, 70);
-        imageView.setLayoutParams(imageParams);
-        imageView.setImageResource(R.drawable.logo_iskolar_ph);
-        innerLayout.addView(imageView);
-        
-        LinearLayout textLayout = new LinearLayout(requireContext());
-        textLayout.setOrientation(LinearLayout.VERTICAL);
-        LinearLayout.LayoutParams textLayoutParams = new LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.WRAP_CONTENT,
-            LinearLayout.LayoutParams.WRAP_CONTENT
-        );
-        textLayoutParams.setMargins(16, 0, 0, 0);
-        textLayout.setLayoutParams(textLayoutParams);
-        innerLayout.addView(textLayout);
-        
-        TextView titleView = new TextView(requireContext());
-        titleView.setText(scholarship.getScholarshipName());
-        titleView.setTextColor(0xFF001F3F);
-        titleView.setTypeface(null, android.graphics.Typeface.BOLD);
-        titleView.setTextSize(16);
-        textLayout.addView(titleView);
-        
-        TextView deadlineView = new TextView(requireContext());
-        deadlineView.setText("Deadline: " + scholarship.getApplicationDeadline());
-        deadlineView.setTextColor(0xFFAAAAAA);
-        LinearLayout.LayoutParams deadlineParams = new LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.WRAP_CONTENT,
-            LinearLayout.LayoutParams.WRAP_CONTENT
-        );
-        deadlineParams.setMargins(0, 4, 0, 0);
-        deadlineView.setLayoutParams(deadlineParams);
-        textLayout.addView(deadlineView);
-        
-        return cardView;
-    }
+    // Removed old view creation methods - now using RecyclerView for performance
 }

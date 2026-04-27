@@ -4,9 +4,15 @@ import android.content.Context;
 import android.os.Handler;
 import android.os.Looper;
 import androidx.lifecycle.LiveData;
+import androidx.lifecycle.Transformations;
+import java.util.Collections;
+import com.example.iskolarphh.callback.DeleteCallback;
+import com.example.iskolarphh.callback.InsertCallback;
+import com.example.iskolarphh.callback.UpdateCallback;
 import com.example.iskolarphh.database.AppDatabase;
 import com.example.iskolarphh.database.dao.ScholarshipDao;
 import com.example.iskolarphh.database.entity.Scholarship;
+import com.example.iskolarphh.service.ScholarshipFilterService;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -14,21 +20,15 @@ import java.util.concurrent.Executors;
 
 public class ScholarshipRepository {
 
-    private static ScholarshipRepository instance;
     private final ScholarshipDao scholarshipDao;
     private final ExecutorService executorService;
-
-    public static ScholarshipRepository getInstance(Context context) {
-        if (instance == null) {
-            instance = new ScholarshipRepository(context);
-        }
-        return instance;
-    }
+    private final ScholarshipFilterService filterService;
 
     public ScholarshipRepository(Context context) {
         AppDatabase database = AppDatabase.getInstance(context);
         this.scholarshipDao = database.scholarshipDao();
         this.executorService = Executors.newSingleThreadExecutor();
+        this.filterService = new ScholarshipFilterService();
     }
 
     public LiveData<List<Scholarship>> getAllScholarships() {
@@ -52,56 +52,15 @@ public class ScholarshipRepository {
     }
 
     public LiveData<List<Scholarship>> searchAndFilterScholarships(String searchQuery, String location, Double studentGpa, boolean enableGpaFilter) {
+        LiveData<List<Scholarship>> baseResults = scholarshipDao.searchAndFilterScholarships(searchQuery, location);
+
         if (enableGpaFilter && studentGpa != null) {
-            LiveData<List<Scholarship>> baseResults = scholarshipDao.searchAndFilterScholarships(searchQuery, location);
-            executorService.execute(() -> {
-                List<Scholarship> filtered = filterByGpa(baseResults.getValue(), studentGpa);
-                new Handler(Looper.getMainLooper()).post(() -> {
-                });
+            return Transformations.map(baseResults, scholarships -> {
+                if (scholarships == null) return Collections.emptyList();
+                return filterService.filterByGpa(scholarships, studentGpa);
             });
-            return baseResults;
         }
-        return scholarshipDao.searchAndFilterScholarships(searchQuery, location);
-    }
-
-    private List<Scholarship> filterByGpa(List<Scholarship> scholarships, double studentGpa) {
-        if (scholarships == null) {
-            return new ArrayList<>();
-        }
-        List<Scholarship> filtered = new ArrayList<>();
-        for (Scholarship scholarship : scholarships) {
-            Double requiredGpa = parseGpaFromEligibility(scholarship.getEligibilityCriteria());
-            if (requiredGpa == null || studentGpa >= requiredGpa) {
-                filtered.add(scholarship);
-            }
-        }
-        return filtered;
-    }
-
-    private Double parseGpaFromEligibility(String eligibilityCriteria) {
-        if (eligibilityCriteria == null) {
-            return null;
-        }
-        java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("(\\d+\\.?\\d*)%");
-        java.util.regex.Matcher matcher = pattern.matcher(eligibilityCriteria);
-        if (matcher.find()) {
-            try {
-                double percentage = Double.parseDouble(matcher.group(1));
-                return percentage / 100.0 * 4.0;
-            } catch (NumberFormatException e) {
-                return null;
-            }
-        }
-        java.util.regex.Pattern gpaPattern = java.util.regex.Pattern.compile("(\\d+\\.?\\d*)");
-        java.util.regex.Matcher gpaMatcher = gpaPattern.matcher(eligibilityCriteria);
-        if (gpaMatcher.find()) {
-            try {
-                return Double.parseDouble(gpaMatcher.group(1));
-            } catch (NumberFormatException e) {
-                return null;
-            }
-        }
-        return null;
+        return baseResults;
     }
 
     public void insert(Scholarship scholarship, InsertCallback callback) {
@@ -147,17 +106,5 @@ public class ScholarshipRepository {
 
     public void delete(Scholarship scholarship) {
         executorService.execute(() -> scholarshipDao.delete(scholarship));
-    }
-
-    public interface InsertCallback {
-        void onInsertComplete(long id);
-    }
-
-    public interface UpdateCallback {
-        void onUpdateComplete(int rowsAffected);
-    }
-
-    public interface DeleteCallback {
-        void onDeleteComplete(int rowsAffected);
     }
 }

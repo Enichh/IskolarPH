@@ -4,6 +4,9 @@ import android.content.Context;
 import android.os.Handler;
 import android.os.Looper;
 import androidx.lifecycle.LiveData;
+import com.example.iskolarphh.callback.DeleteCallback;
+import com.example.iskolarphh.callback.InsertCallback;
+import com.example.iskolarphh.callback.UpdateCallback;
 import com.example.iskolarphh.database.AppDatabase;
 import com.example.iskolarphh.database.dao.StudentDao;
 import com.example.iskolarphh.database.entity.Student;
@@ -106,16 +109,4 @@ public class StudentRepository {
         });
     }
 
-    // Callback interfaces
-    public interface InsertCallback {
-        void onInsertComplete(long id);
-    }
-
-    public interface UpdateCallback {
-        void onUpdateComplete(int rowsAffected);
-    }
-
-    public interface DeleteCallback {
-        void onDeleteComplete(int rowsAffected);
-    }
 }

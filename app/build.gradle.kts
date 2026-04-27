@@ -90,10 +90,15 @@ dependencies {
     testImplementation("androidx.arch.core:core-testing:2.2.0")
 }
 
-// Get API key from local.properties
+// Get API configuration from local.properties
 val localProperties = Properties()
 val localPropertiesFile = rootProject.file("local.properties")
 if (localPropertiesFile.exists()) {
     localProperties.load(localPropertiesFile.inputStream())
 }
 android.defaultConfig.buildConfigField("String", "LONGCAT_API_KEY", "\"${localProperties.getProperty("LONGCAT_API_KEY", "")}\"")
+android.defaultConfig.buildConfigField("String", "LONGCAT_API_BASE_URL", "\"${localProperties.getProperty("LONGCAT_API_BASE_URL", "https://api.example.com")}\"")
+
+// Supabase Configuration
+android.defaultConfig.buildConfigField("String", "SUPABASE_URL", "\"${localProperties.getProperty("SUPABASE_URL", "")}\"")
+android.defaultConfig.buildConfigField("String", "SUPABASE_PUBLISHABLE_KEY", "\"${localProperties.getProperty("SUPABASE_PUBLISHABLE_KEY", "")}\"")

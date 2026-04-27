@@ -4,11 +4,15 @@ import org.junit.Test;
 
 import static org.junit.Assert.*;
 
+import com.example.iskolarphh.callback.InsertCallback;
+import com.example.iskolarphh.callback.UpdateCallback;
+import com.example.iskolarphh.callback.DeleteCallback;
+
 public class StudentRepositoryTest {
 
     @Test
     public void testInsertCallback_canBeImplemented() {
-        StudentRepository.InsertCallback callback = new StudentRepository.InsertCallback() {
+        InsertCallback callback = new InsertCallback() {
             @Override
             public void onInsertComplete(long id) {
                 assertEquals(1, id);
@@ -20,7 +24,7 @@ public class StudentRepositoryTest {
 
     @Test
     public void testUpdateCallback_canBeImplemented() {
-        StudentRepository.UpdateCallback callback = new StudentRepository.UpdateCallback() {
+        UpdateCallback callback = new UpdateCallback() {
             @Override
             public void onUpdateComplete(int rowsAffected) {
                 assertEquals(1, rowsAffected);
@@ -32,7 +36,7 @@ public class StudentRepositoryTest {
 
     @Test
     public void testDeleteCallback_canBeImplemented() {
-        StudentRepository.DeleteCallback callback = new StudentRepository.DeleteCallback() {
+        DeleteCallback callback = new DeleteCallback() {
             @Override
             public void onDeleteComplete(int rowsAffected) {
                 assertEquals(1, rowsAffected);

@@ -8,4 +8,8 @@
     <color name="sti_blue">#001C30</color>
     <color name="card_bg">#FFFFFF</color>
     <color name="text_primary">#212121</color>
+    
+    <!-- Additional colors for dialog -->
+    <color name="red">#F44336</color>
+    <color name="light_gray">#E0E0E0</color>
 </resources>

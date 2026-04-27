@@ -17,6 +17,7 @@ import androidx.fragment.app.DialogFragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import com.example.iskolarphh.R;
+import com.example.iskolarphh.BuildConfig;
 import com.example.iskolarphh.api.RetrofitClient;
 import com.example.iskolarphh.model.ChatMessage;
 import com.example.iskolarphh.model.LongcatRequest;
@@ -46,12 +47,15 @@ public class ChatbotDialog extends DialogFragment {
             "5) Be professional, encouraging, and culturally sensitive to Filipino students. " +
             "6) If unsure about specific scholarship details, advise users to check official sources.";
 
+    private static final String BASE_URL = "https://api.longcat.chat/openai/";
+
     private RecyclerView recyclerMessages;
     private MessageAdapter messageAdapter;
     private TextInputEditText editMessage;
     private FloatingActionButton btnSend;
     private ProgressBar progressBar;
     private View btnClose;
+    private RetrofitClient retrofitClient;
 
     private final List<LongcatRequest.Message> conversationHistory = new ArrayList<>();
     private long lastMessageTime = 0;
@@ -62,6 +66,8 @@ public class ChatbotDialog extends DialogFragment {
         AlertDialog.Builder builder = new AlertDialog.Builder(requireActivity());
         LayoutInflater inflater = requireActivity().getLayoutInflater();
         View view = inflater.inflate(R.layout.dialog_chatbot, null);
+
+        retrofitClient = new RetrofitClient(BASE_URL, BuildConfig.LONGCAT_API_KEY);
 
         initViews(view);
         setupRecyclerView();
@@ -176,7 +182,7 @@ public class ChatbotDialog extends DialogFragment {
 
         LongcatRequest request = new LongcatRequest(MODEL, conversationHistory, MAX_TOKENS, TEMPERATURE);
 
-        RetrofitClient.getApiService().sendMessage(request).enqueue(new Callback<LongcatResponse>() {
+        retrofitClient.getApiService().sendMessage(request).enqueue(new Callback<LongcatResponse>() {
             @Override
             public void onResponse(@NonNull Call<LongcatResponse> call, @NonNull Response<LongcatResponse> response) {
                 showLoading(false);

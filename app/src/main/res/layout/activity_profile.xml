@@ -405,7 +405,7 @@
                                 android:background="?attr/selectableItemBackgroundBorderless"
                                 android:padding="8dp"
                                 android:src="@android:drawable/ic_menu_mylocation"
-                                android:tint="#154284" />
+                                app:tint="#154284" />
                             <ProgressBar
                                 android:id="@+id/progressBarLocation"
                                 android:layout_width="24dp"

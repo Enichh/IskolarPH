@@ -3,4 +3,11 @@
         <!-- Customize your theme colors here later if you want -->
     </style>
 
+    <!-- Custom Dialog Style -->
+    <style name="CustomDialog" parent="Theme.Material3.DayNight.Dialog">
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowIsFloating">true</item>
+        <item name="android:windowCloseOnTouchOutside">false</item>
+    </style>
+
 </resources>

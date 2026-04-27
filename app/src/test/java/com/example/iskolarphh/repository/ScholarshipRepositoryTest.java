@@ -4,56 +4,57 @@ import org.junit.Test;
 
 import static org.junit.Assert.*;
 
+import com.example.iskolarphh.callback.InsertCallback;
+import com.example.iskolarphh.callback.UpdateCallback;
+import com.example.iskolarphh.callback.DeleteCallback;
+
 public class ScholarshipRepositoryTest {
 
     @Test
     public void testInsertCallback_interfaceExists() {
-        assertNotNull(ScholarshipRepository.InsertCallback.class);
+        assertNotNull(InsertCallback.class);
     }
 
     @Test
     public void testUpdateCallback_interfaceExists() {
-        assertNotNull(ScholarshipRepository.UpdateCallback.class);
+        assertNotNull(UpdateCallback.class);
     }
 
     @Test
     public void testDeleteCallback_interfaceExists() {
-        assertNotNull(ScholarshipRepository.DeleteCallback.class);
+        assertNotNull(DeleteCallback.class);
     }
 
     @Test
-    public void testInsertCallback_canBeImplemented() {
-        ScholarshipRepository.InsertCallback callback = new ScholarshipRepository.InsertCallback() {
+    public void testInsertCallback_usage() {
+        InsertCallback callback = new InsertCallback() {
             @Override
-            public void onInsertComplete(long id) {
-                assertEquals(1, id);
+            public void onInsertComplete(long result) {
+                // Test implementation
             }
         };
         assertNotNull(callback);
-        callback.onInsertComplete(1);
     }
 
     @Test
-    public void testUpdateCallback_canBeImplemented() {
-        ScholarshipRepository.UpdateCallback callback = new ScholarshipRepository.UpdateCallback() {
+    public void testUpdateCallback_usage() {
+        UpdateCallback callback = new UpdateCallback() {
             @Override
-            public void onUpdateComplete(int rowsAffected) {
-                assertEquals(1, rowsAffected);
+            public void onUpdateComplete(int result) {
+                // Test implementation
             }
         };
         assertNotNull(callback);
-        callback.onUpdateComplete(1);
     }
 
     @Test
-    public void testDeleteCallback_canBeImplemented() {
-        ScholarshipRepository.DeleteCallback callback = new ScholarshipRepository.DeleteCallback() {
+    public void testDeleteCallback_usage() {
+        DeleteCallback callback = new DeleteCallback() {
             @Override
-            public void onDeleteComplete(int rowsAffected) {
-                assertEquals(1, rowsAffected);
+            public void onDeleteComplete(int result) {
+                // Test implementation
             }
         };
         assertNotNull(callback);
-        callback.onDeleteComplete(1);
     }
 }

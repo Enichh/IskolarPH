@@ -13,6 +13,13 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.example.iskolarphh.service.LocationFlowManager;
+import com.example.iskolarphh.service.LocationManager;
+import com.example.iskolarphh.service.GeocoderService;
+import com.example.iskolarphh.repository.StudentRepository;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -24,24 +31,22 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
-import androidx.lifecycle.LiveData;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.lifecycle.Observer;
 
 import com.example.iskolarphh.R;
 import com.example.iskolarphh.callback.LocationCallback;
 import com.example.iskolarphh.database.entity.Student;
-import com.example.iskolarphh.repository.StudentRepository;
-import com.example.iskolarphh.service.GeocoderService;
-import com.example.iskolarphh.service.LocationManager;
-import com.example.iskolarphh.service.LocationPermissionHandler;
+import com.example.iskolarphh.di.ViewModelFactory;
+import com.example.iskolarphh.ui.LogoutConfirmationDialog;
+import com.example.iskolarphh.viewmodel.ProfileViewModel;
 import com.example.iskolarphh.util.LocationConstants;
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
 
 public class ProfileFragment extends Fragment {
 
-    private StudentRepository studentRepository;
+    private ProfileViewModel profileViewModel;
     private FirebaseAuth firebaseAuth;
+    private LocationFlowManager locationFlowManager;
     private Student currentStudent;
 
     private TextView tvProfileName;
@@ -112,11 +117,16 @@ public class ProfileFragment extends Fragment {
             @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.activity_profile, container, false);
 
-        studentRepository = new StudentRepository(requireContext());
+        ViewModelFactory factory = new ViewModelFactory(requireActivity().getApplication());
+        profileViewModel = new ViewModelProvider(this, factory).get(ProfileViewModel.class);
         firebaseAuth = FirebaseAuth.getInstance();
+        locationFlowManager = new LocationFlowManager(requireContext(),
+            new LocationManager(),
+            new GeocoderService(),
+            new StudentRepository(requireContext()));
 
         initializeViews(view);
-        loadStudentData();
+        observeViewModel();
         setupListeners();
 
         return view;
@@ -151,21 +161,39 @@ public class ProfileFragment extends Fragment {
         setEditMode(false);
     }
 
-    private void loadStudentData() {
-        FirebaseUser firebaseUser = firebaseAuth.getCurrentUser();
-        if (firebaseUser != null) {
-            LiveData<Student> studentLiveData = studentRepository.getStudentByFirebaseUid(firebaseUser.getUid());
-            studentLiveData.observe(getViewLifecycleOwner(), new Observer<Student>() {
-                @Override
-                public void onChanged(Student student) {
-                    if (student != null) {
-                        currentStudent = student;
-                        populateDisplayFields();
-                        populateEditFields();
-                    }
+    private void observeViewModel() {
+        profileViewModel.loadStudentData();
+
+        profileViewModel.getCurrentStudent().observe(getViewLifecycleOwner(), new Observer<Student>() {
+            @Override
+            public void onChanged(Student student) {
+                if (student != null) {
+                    currentStudent = student;
+                    populateDisplayFields();
+                    populateEditFields();
                 }
-            });
-        }
+            }
+        });
+
+        profileViewModel.getUpdateSuccess().observe(getViewLifecycleOwner(), success -> {
+            if (success != null && success) {
+                populateDisplayFields();
+                setEditMode(false);
+            }
+        });
+
+        profileViewModel.getErrorMessage().observe(getViewLifecycleOwner(), error -> {
+            if (error != null && !error.isEmpty()) {
+                Toast.makeText(requireContext(), error, Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        profileViewModel.getLocationUpdateStatus().observe(getViewLifecycleOwner(), location -> {
+            if (location != null && !location.isEmpty()) {
+                etLocation.setText(location);
+                Toast.makeText(requireContext(), "Location updated: " + location, Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     private void populateDisplayFields() {
@@ -261,82 +289,50 @@ public class ProfileFragment extends Fragment {
     }
 
     private void updateProfile() {
-        if (currentStudent != null) {
-            String fullName = etFullName.getText().toString().trim();
-            String gpaStr = etGPA.getText().toString().trim();
-            String location = etLocation.getText().toString().trim();
-            String email = etEmail.getText().toString().trim();
-            String college = etCollege.getText().toString().trim();
-            String course = etCourse.getText().toString().trim();
-            String contactNumber = etContactNumber.getText().toString().trim();
+        String fullName = etFullName.getText().toString().trim();
+        String gpaStr = etGPA.getText().toString().trim();
+        String location = etLocation.getText().toString().trim();
+        String email = etEmail.getText().toString().trim();
+        String college = etCollege.getText().toString().trim();
+        String course = etCourse.getText().toString().trim();
+        String contactNumber = etContactNumber.getText().toString().trim();
 
-            if (fullName.isEmpty() || gpaStr.isEmpty() || location.isEmpty() || email.isEmpty()) {
-                Toast.makeText(requireContext(), "Please fill in required fields", Toast.LENGTH_SHORT).show();
-                return;
-            }
-
-            try {
-                double gpa = Double.parseDouble(gpaStr);
-                if (gpa < 0 || gpa > 5.0) {
-                    Toast.makeText(requireContext(), "GPA must be between 0 and 5.0", Toast.LENGTH_SHORT).show();
-                    return;
-                }
-
-                String[] nameParts = fullName.split(" ", 3);
-                if (nameParts.length < 2) {
-                    Toast.makeText(requireContext(), "Please enter a valid full name", Toast.LENGTH_SHORT).show();
-                    return;
-                }
-
-                currentStudent.setFirstName(nameParts[0]);
-                currentStudent.setLastName(nameParts[nameParts.length - 1]);
-                if (nameParts.length == 3) {
-                    currentStudent.setMiddleInitial(nameParts[1]);
-                } else {
-                    currentStudent.setMiddleInitial("");
-                }
-                currentStudent.setGpa(gpa);
-                currentStudent.setLocation(location);
-                currentStudent.setEmail(email);
-                currentStudent.setCollege(college.isEmpty() ? null : college);
-                currentStudent.setCourse(course.isEmpty() ? null : course);
-                currentStudent.setContactNumber(contactNumber.isEmpty() ? null : contactNumber);
-
-                studentRepository.update(currentStudent, new StudentRepository.UpdateCallback() {
-                    @Override
-                    public void onUpdateComplete(int rowsAffected) {
-                        if (rowsAffected > 0) {
-                            Toast.makeText(requireContext(), "Profile updated successfully", Toast.LENGTH_SHORT).show();
-                            populateDisplayFields();
-                            setEditMode(false);
-                        } else {
-                            Toast.makeText(requireContext(), "Failed to update profile", Toast.LENGTH_SHORT).show();
-                        }
-                    }
-                });
-            } catch (NumberFormatException e) {
-                Toast.makeText(requireContext(), "Please enter a valid GPA", Toast.LENGTH_SHORT).show();
-            }
-        }
+        profileViewModel.updateProfile(fullName, gpaStr, location, email, college, course, contactNumber);
     }
 
     private void logout() {
-        firebaseAuth.signOut();
-        Toast.makeText(requireContext(), "Logged out successfully", Toast.LENGTH_SHORT).show();
-        requireActivity().finish();
+        // Show logout confirmation dialog
+        LogoutConfirmationDialog logoutDialog = new LogoutConfirmationDialog();
+        logoutDialog.setLogoutConfirmationListener(new LogoutConfirmationDialog.LogoutConfirmationListener() {
+            @Override
+            public void onLogoutConfirmed() {
+                // User confirmed logout
+                profileViewModel.logout();
+                Toast.makeText(requireContext(), "Logged out successfully", Toast.LENGTH_SHORT).show();
+                requireActivity().finish();
+            }
+
+            @Override
+            public void onLogoutCancelled() {
+                // User cancelled logout - no action needed
+                // Dialog will be dismissed automatically
+            }
+        });
+        
+        logoutDialog.show(getParentFragmentManager(), "LogoutConfirmationDialog");
     }
 
     private void handleLocationButtonClick() {
-        if (LocationPermissionHandler.hasLocationPermissions(requireContext())) {
+        if (profileViewModel.hasLocationPermissions()) {
             fetchCurrentLocation();
         } else {
-            LocationPermissionHandler.checkAndRequestLocationPermissions(requireActivity(),
+            profileViewModel.requestLocationPermissions(requireActivity(),
                 LocationConstants.LOCATION_PERMISSION_REQUEST_CODE);
         }
     }
 
     private void showLocationPermissionDialog() {
-        LocationPermissionDialog.show(requireContext(), new LocationPermissionDialog.LocationPermissionCallback() {
+        locationFlowManager.checkAndRequestLocationPermission(requireActivity(), new LocationPermissionDialog.LocationPermissionCallback() {
             @Override
             public void onPermissionAllowed() {
                 fetchCurrentLocation();
@@ -353,55 +349,20 @@ public class ProfileFragment extends Fragment {
         progressBarLocation.setVisibility(View.VISIBLE);
         btnUseCurrentLocation.setEnabled(false);
 
-        LocationManager.getInstance().requestSingleLocationUpdate(requireContext(), new LocationCallback() {
-            @Override
-            public void onLocationRetrieved(String location, double latitude, double longitude) {
-                GeocoderService.getInstance().getLocationFromCoordinates(requireContext(), latitude, longitude, new LocationCallback() {
-                    @Override
-                    public void onLocationRetrieved(String locationString, double lat, double lng) {
-                        requireActivity().runOnUiThread(() -> {
-                            progressBarLocation.setVisibility(View.GONE);
-                            btnUseCurrentLocation.setEnabled(true);
-                            etLocation.setText(locationString);
-                            Toast.makeText(requireContext(), "Location updated: " + locationString, Toast.LENGTH_SHORT).show();
-                        });
-                    }
+        profileViewModel.fetchCurrentLocation();
 
-                    @Override
-                    public void onLocationError(String errorMessage) {
-                        requireActivity().runOnUiThread(() -> {
-                            progressBarLocation.setVisibility(View.GONE);
-                            btnUseCurrentLocation.setEnabled(true);
-                            etLocation.setText(LocationConstants.DEFAULT_LOCATION);
-                            Toast.makeText(requireContext(), "Using default location", Toast.LENGTH_SHORT).show();
-                        });
-                    }
-
-                    @Override
-                    public void onPermissionDenied() {
-                        requireActivity().runOnUiThread(() -> {
-                            progressBarLocation.setVisibility(View.GONE);
-                            btnUseCurrentLocation.setEnabled(true);
-                        });
-                    }
-                });
+        profileViewModel.getLocationUpdateStatus().observe(getViewLifecycleOwner(), location -> {
+            if (location != null) {
+                progressBarLocation.setVisibility(View.GONE);
+                btnUseCurrentLocation.setEnabled(true);
             }
+        });
 
-            @Override
-            public void onLocationError(String errorMessage) {
-                requireActivity().runOnUiThread(() -> {
-                    progressBarLocation.setVisibility(View.GONE);
-                    btnUseCurrentLocation.setEnabled(true);
-                    Toast.makeText(requireContext(), errorMessage, Toast.LENGTH_SHORT).show();
-                });
-            }
-
-            @Override
-            public void onPermissionDenied() {
-                requireActivity().runOnUiThread(() -> {
-                    progressBarLocation.setVisibility(View.GONE);
-                    btnUseCurrentLocation.setEnabled(true);
-                });
+        profileViewModel.getErrorMessage().observe(getViewLifecycleOwner(), error -> {
+            if (error != null && !error.isEmpty()) {
+                progressBarLocation.setVisibility(View.GONE);
+                btnUseCurrentLocation.setEnabled(true);
+                etLocation.setText(LocationConstants.DEFAULT_LOCATION);
             }
         });
     }
@@ -442,13 +403,7 @@ public class ProfileFragment extends Fragment {
 
     @Override
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
-        if (requestCode == LocationConstants.LOCATION_PERMISSION_REQUEST_CODE) {
-            if (grantResults.length > 0 && grantResults[0] == android.content.pm.PackageManager.PERMISSION_GRANTED) {
-                fetchCurrentLocation();
-            } else {
-                Toast.makeText(requireContext(), "Location permission denied", Toast.LENGTH_SHORT).show();
-            }
-        }
+        profileViewModel.handlePermissionResult(requestCode, permissions, grantResults);
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
     }
 

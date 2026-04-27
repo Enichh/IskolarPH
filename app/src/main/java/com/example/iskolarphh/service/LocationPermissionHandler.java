@@ -12,7 +12,16 @@ import com.example.iskolarphh.util.LocationConstants;
 
 public class LocationPermissionHandler {
     
+    private static LocationPermissionHandler instance;
+    
     private LocationPermissionHandler() {
+    }
+    
+    public static LocationPermissionHandler getInstance() {
+        if (instance == null) {
+            instance = new LocationPermissionHandler();
+        }
+        return instance;
     }
     
     public static boolean hasLocationPermissions(Context context) {

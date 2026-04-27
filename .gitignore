@@ -1,5 +1,3 @@
-
-
 # Gradle files
 .gradle/
 build/
@@ -55,3 +53,27 @@ Thumbs.db
 
 # Markdown files
 *.md
+
+# Firebase Cloud Functions
+functions/node_modules/
+functions/.env
+functions/.firebase/
+functions/lib/
+functions/.runtimeconfig.json
+
+# Firebase
+.firebase/
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+
+# Node.js
+package-lock.json
+yarn.lock
+npm-debug.log
+yarn-error.log
+
+# Environment variables
+.env
+.env.local
+.env.*.local

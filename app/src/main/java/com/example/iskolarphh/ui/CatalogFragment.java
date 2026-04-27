@@ -1,7 +1,6 @@
 package com.example.iskolarphh.ui;
 
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -18,40 +17,21 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.Fragment;
-import androidx.lifecycle.LiveData;
-import androidx.lifecycle.Observer;
+import androidx.lifecycle.ViewModelProvider;
+
+import com.example.iskolarphh.database.entity.Scholarship;
+import java.util.List;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.iskolarphh.R;
-import com.example.iskolarphh.callback.LocationCallback;
-import com.example.iskolarphh.database.entity.Scholarship;
-import com.example.iskolarphh.database.entity.Student;
-import com.example.iskolarphh.repository.ScholarshipRepository;
-import com.example.iskolarphh.repository.StudentRepository;
-import com.example.iskolarphh.service.GeocoderService;
-import com.example.iskolarphh.service.LocationManager;
-import com.example.iskolarphh.service.LocationPermissionHandler;
-import com.example.iskolarphh.util.LocationConstants;
-import com.example.iskolarphh.util.LocationPreferences;
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import com.example.iskolarphh.di.ViewModelFactory;
+import com.example.iskolarphh.viewmodel.CatalogViewModel;
 
 public class CatalogFragment extends Fragment {
 
-    private ScholarshipRepository scholarshipRepository;
-    private StudentRepository studentRepository;
+    private CatalogViewModel catalogViewModel;
     private ScholarshipAdapter adapter;
-    private FirebaseAuth firebaseAuth;
-    private Student currentStudent;
-    private String currentSearchQuery = "";
-    private String currentLocationFilter = null;
-    private boolean gpaFilterEnabled = false;
 
     private TextView tvLocationHeader;
     private ImageButton btnRefreshLocation;
@@ -62,15 +42,14 @@ public class CatalogFragment extends Fragment {
             @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.activity_catalog, container, false);
 
-        scholarshipRepository = ScholarshipRepository.getInstance(requireContext());
-        studentRepository = new StudentRepository(requireContext());
-        firebaseAuth = FirebaseAuth.getInstance();
+        ViewModelFactory factory = new ViewModelFactory(requireActivity().getApplication());
+        catalogViewModel = new ViewModelProvider(this, factory).get(CatalogViewModel.class);
 
         setupRecyclerView(view);
         setupSearch(view);
         setupFilters(view);
         setupLocationHeader(view);
-        loadStudentData();
+        observeViewModel();
 
         return view;
     }
@@ -88,8 +67,7 @@ public class CatalogFragment extends Fragment {
 
             @Override
             public void onSaveClick(Scholarship scholarship) {
-                scholarship.setSaved(!scholarship.isSaved());
-                scholarshipRepository.update(scholarship);
+                catalogViewModel.updateScholarshipSaved(scholarship);
                 adapter.notifyItemChanged(adapter.getCurrentList().indexOf(scholarship));
                 String message = scholarship.isSaved() ? "Scholarship saved" : "Scholarship removed from saved";
                 Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show();
@@ -106,8 +84,7 @@ public class CatalogFragment extends Fragment {
 
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
-                currentSearchQuery = s.toString();
-                observeScholarships();
+                catalogViewModel.setSearchQuery(s.toString());
             }
 
             @Override
@@ -130,22 +107,29 @@ public class CatalogFragment extends Fragment {
         btnRefreshLocation.setOnClickListener(v -> refreshLocation());
     }
 
-    private void loadStudentData() {
-        FirebaseUser firebaseUser = firebaseAuth.getCurrentUser();
-        if (firebaseUser != null) {
-            LiveData<Student> studentLiveData = studentRepository.getStudentByFirebaseUid(firebaseUser.getUid());
-            studentLiveData.observe(getViewLifecycleOwner(), new Observer<Student>() {
-                @Override
-                public void onChanged(Student student) {
-                    if (student != null) {
-                        currentStudent = student;
-                        updateLocationHeader();
-                        observeScholarships();
-                    }
-                }
-            });
-        }
-        observeScholarships();
+    private void observeViewModel() {
+        catalogViewModel.loadStudentData().observe(getViewLifecycleOwner(), student -> {
+            if (student != null) {
+                catalogViewModel.setCurrentStudent(student);
+            }
+        });
+
+        catalogViewModel.getScholarshipsLiveData().observe(getViewLifecycleOwner(), scholarships -> {
+            if (adapter != null) {
+                List<Scholarship> filtered = catalogViewModel.applyGpaFilter(scholarships);
+                adapter.submitList(filtered);
+            }
+        });
+
+        catalogViewModel.getLocationHeader().observe(getViewLifecycleOwner(), header -> {
+            tvLocationHeader.setText(header);
+        });
+
+        catalogViewModel.getErrorMessage().observe(getViewLifecycleOwner(), error -> {
+            if (error != null && !error.isEmpty()) {
+                Toast.makeText(requireContext(), error, Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     private void showLocationFilterDialog() {
@@ -154,177 +138,23 @@ public class CatalogFragment extends Fragment {
                 .setTitle("Select Location")
                 .setItems(locations, (dialog, which) -> {
                     if (which == 0) {
-                        currentLocationFilter = null;
+                        catalogViewModel.setLocationFilter(null);
                     } else {
-                        currentLocationFilter = locations[which];
+                        catalogViewModel.setLocationFilter(locations[which]);
                     }
-                    observeScholarships();
                 })
                 .show();
     }
 
     private void toggleGpaFilter() {
-        if (currentStudent == null) {
-            Toast.makeText(requireContext(), "Please complete your profile first", Toast.LENGTH_SHORT).show();
-            return;
-        }
-        gpaFilterEnabled = !gpaFilterEnabled;
-        String status = gpaFilterEnabled ? "enabled" : "disabled";
-        Toast.makeText(requireContext(), "GPA filter " + status, Toast.LENGTH_SHORT).show();
-        observeScholarships();
+        catalogViewModel.toggleGpaFilter();
     }
 
-    private void observeScholarships() {
-        // Only use location filter if user explicitly selected it from the dialog
-        String locationFilter = currentLocationFilter;
-        
-        android.util.Log.d("CatalogFragment", "observeScholarships - searchQuery: '" + currentSearchQuery + "', location filter: '" + locationFilter + "'");
-        
-        scholarshipRepository.searchAndFilterScholarships(currentSearchQuery, locationFilter)
-                .observe(getViewLifecycleOwner(), scholarships -> {
-                    android.util.Log.d("CatalogFragment", "Scholarships received: " + (scholarships != null ? scholarships.size() : "null"));
-                    if (adapter != null) {
-                        List<Scholarship> filteredScholarships = scholarships;
-                        if (gpaFilterEnabled && currentStudent != null) {
-                            filteredScholarships = filterByGpa(scholarships, currentStudent.getGpa());
-                        }
-                        android.util.Log.d("CatalogFragment", "Submitting to adapter: " + (filteredScholarships != null ? filteredScholarships.size() : "null"));
-                        adapter.submitList(filteredScholarships);
-                    }
-                });
-    }
 
-    private List<Scholarship> filterByGpa(List<Scholarship> scholarships, double studentGpa) {
-        List<Scholarship> filtered = new ArrayList<>();
-        for (Scholarship scholarship : scholarships) {
-            Double requiredGpa = parseGpaFromEligibility(scholarship.getEligibilityCriteria());
-            if (requiredGpa == null || studentGpa >= requiredGpa) {
-                filtered.add(scholarship);
-            }
-        }
-        return filtered;
-    }
-
-    private Double parseGpaFromEligibility(String eligibilityCriteria) {
-        if (eligibilityCriteria == null) {
-            return null;
-        }
-        
-        Pattern pattern = Pattern.compile("(\\d+\\.?\\d*)%");
-        Matcher matcher = pattern.matcher(eligibilityCriteria);
-        
-        if (matcher.find()) {
-            try {
-                double percentage = Double.parseDouble(matcher.group(1));
-                return percentage / 100.0 * 4.0;
-            } catch (NumberFormatException e) {
-                return null;
-            }
-        }
-        
-        Pattern gpaPattern = Pattern.compile("(\\d+\\.?\\d*)");
-        Matcher gpaMatcher = gpaPattern.matcher(eligibilityCriteria);
-        
-        if (gpaMatcher.find()) {
-            try {
-                return Double.parseDouble(gpaMatcher.group(1));
-            } catch (NumberFormatException e) {
-                return null;
-            }
-        }
-        
-        return null;
-    }
-
-    private void updateLocationHeader() {
-        if (currentStudent != null && currentStudent.getLocation() != null && !currentStudent.getLocation().isEmpty()) {
-            tvLocationHeader.setText("Scholarships near " + currentStudent.getLocation());
-        } else {
-            tvLocationHeader.setText("All Scholarships");
-        }
-    }
 
     private void refreshLocation() {
-        if (currentStudent == null) {
-            Toast.makeText(requireContext(), "Please complete your profile first", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        if (LocationPermissionHandler.hasLocationPermissions(requireContext())) {
-            fetchLocationForHeader();
-        } else {
-            LocationPermissionHandler.checkAndRequestLocationPermissions(requireActivity(),
-                LocationConstants.LOCATION_PERMISSION_REQUEST_CODE);
-        }
+        catalogViewModel.refreshLocation();
     }
 
-    private void fetchLocationForHeader() {
-        LocationManager.getInstance().requestSingleLocationUpdate(requireContext(), new LocationCallback() {
-            @Override
-            public void onLocationRetrieved(String location, double latitude, double longitude) {
-                GeocoderService.getInstance().getLocationFromCoordinates(requireContext(), latitude, longitude, new LocationCallback() {
-                    @Override
-                    public void onLocationRetrieved(String locationString, double lat, double lng) {
-                        requireActivity().runOnUiThread(() -> {
-                            if (currentStudent != null) {
-                                currentStudent.setLocation(locationString);
-                                LocationPreferences.saveLocation(requireContext(), locationString, LocationConstants.LOCATION_SOURCE_GPS);
-                                studentRepository.update(currentStudent, null);
-                                updateLocationHeader();
-                                Toast.makeText(requireContext(), "Location updated", Toast.LENGTH_SHORT).show();
-                            }
-                        });
-                    }
 
-                    @Override
-                    public void onLocationError(String errorMessage) {
-                        requireActivity().runOnUiThread(() -> {
-                            Toast.makeText(requireContext(), "Geocoder error: " + errorMessage + ". Using last known location.", Toast.LENGTH_SHORT).show();
-                            String lastLocation = LocationPreferences.getLastLocation(requireContext());
-                            if (currentStudent != null) {
-                                currentStudent.setLocation(lastLocation);
-                                updateLocationHeader();
-                            }
-                        });
-                    }
-
-                    @Override
-                    public void onPermissionDenied() {
-                        requireActivity().runOnUiThread(() -> {
-                            Toast.makeText(requireContext(), "Location permission denied. Using last known location.", Toast.LENGTH_SHORT).show();
-                            String lastLocation = LocationPreferences.getLastLocation(requireContext());
-                            if (currentStudent != null) {
-                                currentStudent.setLocation(lastLocation);
-                                updateLocationHeader();
-                            }
-                        });
-                    }
-                });
-            }
-
-            @Override
-            public void onLocationError(String errorMessage) {
-                requireActivity().runOnUiThread(() -> {
-                    Toast.makeText(requireContext(), "GPS error: " + errorMessage + ". Using last known location.", Toast.LENGTH_SHORT).show();
-                    String lastLocation = LocationPreferences.getLastLocation(requireContext());
-                    if (currentStudent != null) {
-                        currentStudent.setLocation(lastLocation);
-                        updateLocationHeader();
-                    }
-                });
-            }
-
-            @Override
-            public void onPermissionDenied() {
-                requireActivity().runOnUiThread(() -> {
-                    Toast.makeText(requireContext(), "Location permission denied. Using last known location.", Toast.LENGTH_SHORT).show();
-                    String lastLocation = LocationPreferences.getLastLocation(requireContext());
-                    if (currentStudent != null) {
-                        currentStudent.setLocation(lastLocation);
-                        updateLocationHeader();
-                    }
-                });
-            }
-        });
-    }
 }

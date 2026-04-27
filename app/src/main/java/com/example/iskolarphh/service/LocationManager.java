@@ -11,23 +11,11 @@ import java.util.concurrent.Executors;
 
 public class LocationManager {
     
-    private static volatile LocationManager instance;
     private final ExecutorService executorService;
     private FusedLocationProviderClient fusedLocationClient;
     
-    private LocationManager() {
+    public LocationManager() {
         this.executorService = Executors.newSingleThreadExecutor();
-    }
-    
-    public static LocationManager getInstance() {
-        if (instance == null) {
-            synchronized (LocationManager.class) {
-                if (instance == null) {
-                    instance = new LocationManager();
-                }
-            }
-        }
-        return instance;
     }
     
     private FusedLocationProviderClient getFusedLocationClient(Context context) {

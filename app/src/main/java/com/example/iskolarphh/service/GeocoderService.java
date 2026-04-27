@@ -20,24 +20,12 @@ import java.util.Locale;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-public class GeocoderService {
+public class GeocoderService implements AutoCloseable {
     
-    private static volatile GeocoderService instance;
     private final ExecutorService executorService;
     
-    private GeocoderService() {
+    public GeocoderService() {
         this.executorService = Executors.newSingleThreadExecutor();
-    }
-    
-    public static GeocoderService getInstance() {
-        if (instance == null) {
-            synchronized (GeocoderService.class) {
-                if (instance == null) {
-                    instance = new GeocoderService();
-                }
-            }
-        }
-        return instance;
     }
     
     public void getLocationFromCoordinates(Context context, double latitude, double longitude, LocationCallback callback) {
@@ -109,7 +97,8 @@ public class GeocoderService {
         return sb.length() > 0 ? sb.toString() : LocationConstants.DEFAULT_LOCATION;
     }
     
-    public void shutdown() {
+    @Override
+    public void close() {
         executorService.shutdown();
     }
 }

@@ -10,14 +10,15 @@ import android.widget.TextView;
 import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.lifecycle.ViewModelProvider;
 import com.google.android.material.textfield.TextInputEditText;
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
+import com.example.iskolarphh.di.ViewModelFactory;
+import com.example.iskolarphh.viewmodel.LoginViewModel;
 
 public class LoginActivity extends AppCompatActivity {
 
     private static final String TAG = "LoginActivity";
-    private FirebaseAuth mAuth;
+    private LoginViewModel loginViewModel;
     private TextInputEditText etEmail;
     private TextInputEditText etPassword;
     private Button btnLogin;
@@ -29,7 +30,8 @@ public class LoginActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.login);
 
-        mAuth = FirebaseAuth.getInstance();
+        ViewModelFactory factory = new ViewModelFactory(getApplication());
+        loginViewModel = new ViewModelProvider(this, factory).get(LoginViewModel.class);
 
         etEmail = findViewById(R.id.etEmail);
         etPassword = findViewById(R.id.etPassword);
@@ -43,22 +45,54 @@ public class LoginActivity extends AppCompatActivity {
             startActivity(intent);
         });
 
-        tvForgotPassword.setOnClickListener(v -> sendPasswordResetEmail());
+        tvForgotPassword.setOnClickListener(v -> {
+            Intent intent = new Intent(LoginActivity.this, PasswordResetActivity.class);
+            String email = etEmail.getText().toString().trim();
+            if (!email.isEmpty()) {
+                intent.putExtra("email", email);
+            }
+            startActivity(intent);
+        });
+
+        observeViewModel();
+    }
+
+    private void observeViewModel() {
+        loginViewModel.getLoginState().observe(this, state -> {
+            switch (state) {
+                case SUCCESS:
+                    Toast.makeText(LoginActivity.this, "Login successful", Toast.LENGTH_SHORT).show();
+                    navigateToMain();
+                    break;
+                case VERIFIED:
+                    navigateToMain();
+                    break;
+                case NOT_VERIFIED:
+                    Toast.makeText(LoginActivity.this, "Please verify your email before logging in", Toast.LENGTH_LONG).show();
+                    navigateToEmailVerification();
+                    break;
+                case ERROR:
+                    btnLogin.setEnabled(true);
+                    break;
+                case RESET_SENT:
+                    btnLogin.setEnabled(true);
+                    break;
+                default:
+                    break;
+            }
+        });
+
+        loginViewModel.getErrorMessage().observe(this, error -> {
+            if (error != null && !error.isEmpty()) {
+                Toast.makeText(LoginActivity.this, error, Toast.LENGTH_LONG).show();
+            }
+        });
     }
 
     @Override
     public void onStart() {
         super.onStart();
-        FirebaseUser currentUser = mAuth.getCurrentUser();
-        if (currentUser != null) {
-            // Check if email is verified before navigating to main
-            if (currentUser.isEmailVerified()) {
-                navigateToMain();
-            } else {
-                // Redirect to email verification
-                navigateToEmailVerification();
-            }
-        }
+        loginViewModel.checkUserStatus();
     }
 
     private void attemptLogin() {
@@ -81,80 +115,30 @@ public class LoginActivity extends AppCompatActivity {
         }
 
         btnLogin.setEnabled(false);
-        
-        mAuth.signInWithEmailAndPassword(email, password)
-                .addOnCompleteListener(this, task -> {
-                    btnLogin.setEnabled(true);
-                    if (task.isSuccessful()) {
-                        FirebaseUser user = mAuth.getCurrentUser();
-                        if (user != null) {
-                            // Check email verification status
-                            if (user.isEmailVerified()) {
-                                Log.d(TAG, "User email is verified");
-                                Toast.makeText(LoginActivity.this, "Login successful", Toast.LENGTH_SHORT).show();
-                                navigateToMain();
-                            } else {
-                                Log.d(TAG, "User email is not verified");
-                                Toast.makeText(LoginActivity.this, 
-                                        "Please verify your email before logging in", 
-                                        Toast.LENGTH_LONG).show();
-                                navigateToEmailVerification();
-                            }
-                        }
-                    } else {
-                        String errorMessage = "Authentication failed";
-                        if (task.getException() != null) {
-                            String errorCode = task.getException().getClass().getSimpleName();
-                            switch (errorCode) {
-                                case "FirebaseAuthInvalidUserException":
-                                    errorMessage = "No account found with this email";
-                                    break;
-                                case "FirebaseAuthInvalidCredentialsException":
-                                    errorMessage = "Invalid password";
-                                    break;
-                                default:
-                                    errorMessage = task.getException().getMessage();
-                                    break;
-                            }
-                        }
-                        Toast.makeText(LoginActivity.this, errorMessage, Toast.LENGTH_LONG).show();
-                    }
-                });
+        loginViewModel.attemptLogin(email, password);
     }
 
-    private void sendPasswordResetEmail() {
-        String email = etEmail.getText().toString().trim();
-        
-        if (TextUtils.isEmpty(email)) {
-            etEmail.setError("Please enter your email address");
-            return;
-        }
-
-        mAuth.sendPasswordResetEmail(email)
-                .addOnCompleteListener(task -> {
-                    if (task.isSuccessful()) {
-                        Toast.makeText(LoginActivity.this, 
-                                "Password reset email sent to " + email, 
-                                Toast.LENGTH_LONG).show();
-                    } else {
-                        Toast.makeText(LoginActivity.this, 
-                                "Failed to send reset email: " + task.getException().getMessage(), 
-                                Toast.LENGTH_LONG).show();
-                    }
-                });
-    }
 
     private void navigateToEmailVerification() {
         Intent intent = new Intent(LoginActivity.this, EmailVerificationActivity.class);
+        intent.putExtra("verification_type", "login");
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         startActivity(intent);
-        new Handler().postDelayed(() -> finish(), 100);
+        finish();
+    }
+
+    private void navigateToEmailVerificationForRegistration() {
+        Intent intent = new Intent(LoginActivity.this, EmailVerificationActivity.class);
+        intent.putExtra("verification_type", "registration");
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        startActivity(intent);
+        finish();
     }
 
     private void navigateToMain() {
         Intent intent = new Intent(LoginActivity.this, MainActivity.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         startActivity(intent);
-        new Handler().postDelayed(() -> finish(), 100);
+        finish();
     }
 }
