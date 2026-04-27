@@ -7,31 +7,51 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
+import androidx.recyclerview.widget.DiffUtil;
+import androidx.recyclerview.widget.ListAdapter;
 import androidx.recyclerview.widget.RecyclerView;
 import com.example.iskolarphh.R;
 import com.example.iskolarphh.database.entity.Scholarship;
 import com.example.iskolarphh.ui.ScholarshipDetailActivity;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * RecyclerView adapter for displaying scholarship cards with view recycling
- * Optimized for performance with ViewHolder pattern
+ * Optimized for performance with ViewHolder pattern and DiffUtil
  */
-public class ScholarshipAdapter extends RecyclerView.Adapter<ScholarshipAdapter.ScholarshipViewHolder> {
+public class ScholarshipAdapter extends ListAdapter<Scholarship, ScholarshipAdapter.ScholarshipViewHolder> {
 
-    private List<Scholarship> scholarships = new ArrayList<>();
     private OnScholarshipClickListener clickListener;
 
     public interface OnScholarshipClickListener {
         void onScholarshipClick(Scholarship scholarship);
     }
 
+    private static final DiffUtil.ItemCallback<Scholarship> DIFF_CALLBACK = new DiffUtil.ItemCallback<Scholarship>() {
+        @Override
+        public boolean areItemsTheSame(@NonNull Scholarship oldItem, @NonNull Scholarship newItem) {
+            return oldItem.getId() == newItem.getId();
+        }
+
+        @Override
+        public boolean areContentsTheSame(@NonNull Scholarship oldItem, @NonNull Scholarship newItem) {
+            return Objects.equals(oldItem.getScholarshipName(), newItem.getScholarshipName()) &&
+                    Objects.equals(oldItem.getDescription(), newItem.getDescription()) &&
+                    oldItem.getAwardAmount() == newItem.getAwardAmount() &&
+                    Objects.equals(oldItem.getProviderOrganization(), newItem.getProviderOrganization()) &&
+                    Objects.equals(oldItem.getApplicationDeadline(), newItem.getApplicationDeadline()) &&
+                    oldItem.isSaved() == newItem.isSaved();
+        }
+    };
+
     public ScholarshipAdapter() {
-        // Default constructor
+        super(DIFF_CALLBACK);
     }
 
     public ScholarshipAdapter(OnScholarshipClickListener clickListener) {
+        super(DIFF_CALLBACK);
         this.clickListener = clickListener;
     }
 
@@ -45,28 +65,13 @@ public class ScholarshipAdapter extends RecyclerView.Adapter<ScholarshipAdapter.
 
     @Override
     public void onBindViewHolder(@NonNull ScholarshipViewHolder holder, int position) {
-        Scholarship scholarship = scholarships.get(position);
+        Scholarship scholarship = getItem(position);
         holder.bind(scholarship);
     }
 
     @Override
     public int getItemCount() {
-        return scholarships.size();
-    }
-
-    /**
-     * Updates the adapter data with new scholarship list
-     * Uses efficient diff calculation if needed
-     */
-    public void updateScholarships(List<Scholarship> newScholarships) {
-        if (newScholarships == null) {
-            newScholarships = new ArrayList<>();
-        }
-        
-        // Simple replace for now - could use DiffUtil for better animations
-        this.scholarships.clear();
-        this.scholarships.addAll(newScholarships);
-        notifyDataSetChanged();
+        return getCurrentList().size();
     }
 
     /**

@@ -82,9 +82,6 @@ public class DashboardFragment extends Fragment {
         // Optimize RecyclerView performance
         // Note: setHasFixedSize(false) because RecyclerView height is wrap_content
         recyclerView.setHasFixedSize(false);
-        recyclerView.setItemViewCacheSize(20);
-        recyclerView.setDrawingCacheEnabled(true);
-        recyclerView.setDrawingCacheQuality(View.DRAWING_CACHE_QUALITY_HIGH);
     }
 
     private void observeViewModel() {
@@ -168,8 +165,8 @@ public class DashboardFragment extends Fragment {
             recyclerView.setVisibility(View.VISIBLE);
             tvEmptyState.setVisibility(View.GONE);
             
-            // Update adapter data efficiently
-            scholarshipAdapter.updateScholarships(scholarships);
+            // Update adapter data efficiently with DiffUtil
+            scholarshipAdapter.submitList(scholarships);
             
             // Log performance metrics
             PerformanceMonitor.logMethodExecutionTime("DashboardFragment.displayRecommendations()", startTime);

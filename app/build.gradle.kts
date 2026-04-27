@@ -82,6 +82,13 @@ dependencies {
     implementation(libs.markwon.strikethrough)
     implementation(libs.markwon.tables)
 
+    // Glide for image loading
+    implementation(libs.glide)
+    annotationProcessor(libs.glide.compiler)
+
+    // LeakCanary for memory leak detection (debug only)
+    debugImplementation(libs.leakcanary.android)
+
     // Unit Testing
     testImplementation("org.mockito:mockito-core:5.7.0")
     testImplementation("org.mockito:mockito-inline:5.2.0")

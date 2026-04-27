@@ -3,7 +3,9 @@ package com.example.iskolarphh;
 import android.content.Intent;
 import android.Manifest;
 import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.StrictMode;
 import android.view.MenuItem;
 import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
@@ -38,6 +40,22 @@ public class MainActivity extends AppCompatActivity {
     private static final String PREF_DIALOG_SHOWN = "location_dialog_shown";
     private BottomNavigationView bottomNav;
     private LocationFlowManager locationFlowManager;
+
+    static {
+        if (BuildConfig.DEBUG) {
+            StrictMode.setThreadPolicy(new StrictMode.ThreadPolicy.Builder()
+                    .detectDiskReads()
+                    .detectDiskWrites()
+                    .detectNetwork()
+                    .penaltyLog()
+                    .build());
+            StrictMode.setVmPolicy(new StrictMode.VmPolicy.Builder()
+                    .detectLeakedSqlLiteObjects()
+                    .detectLeakedClosableObjects()
+                    .penaltyLog()
+                    .build());
+        }
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

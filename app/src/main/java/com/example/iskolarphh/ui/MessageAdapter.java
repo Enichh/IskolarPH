@@ -5,6 +5,8 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
+import androidx.recyclerview.widget.DiffUtil;
+import androidx.recyclerview.widget.ListAdapter;
 import androidx.recyclerview.widget.RecyclerView;
 import com.example.iskolarphh.R;
 import com.example.iskolarphh.model.ChatMessage;
@@ -13,20 +15,33 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 import io.noties.markwon.Markwon;
 import io.noties.markwon.ext.strikethrough.StrikethroughPlugin;
 import io.noties.markwon.ext.tables.TablePlugin;
 
-public class MessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
+public class MessageAdapter extends ListAdapter<ChatMessage, RecyclerView.ViewHolder> {
     private static final int VIEW_TYPE_USER = 1;
     private static final int VIEW_TYPE_ASSISTANT = 2;
 
-    private final List<ChatMessage> messages;
     private final SimpleDateFormat timeFormat;
     private final Markwon markwon;
 
+    private static final DiffUtil.ItemCallback<ChatMessage> DIFF_CALLBACK = new DiffUtil.ItemCallback<ChatMessage>() {
+        @Override
+        public boolean areItemsTheSame(@NonNull ChatMessage oldItem, @NonNull ChatMessage newItem) {
+            return oldItem.getTimestamp() == newItem.getTimestamp();
+        }
+
+        @Override
+        public boolean areContentsTheSame(@NonNull ChatMessage oldItem, @NonNull ChatMessage newItem) {
+            return Objects.equals(oldItem.getRole(), newItem.getRole()) &&
+                    Objects.equals(oldItem.getContent(), newItem.getContent());
+        }
+    };
+
     public MessageAdapter(android.content.Context context) {
-        this.messages = new ArrayList<>();
+        super(DIFF_CALLBACK);
         this.timeFormat = new SimpleDateFormat("h:mm a", Locale.getDefault());
         this.markwon = Markwon.builder(context)
                 .usePlugin(StrikethroughPlugin.create())
@@ -35,18 +50,18 @@ public class MessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
     }
 
     public void addMessage(ChatMessage message) {
-        messages.add(message);
-        notifyItemInserted(messages.size() - 1);
+        List<ChatMessage> currentList = new ArrayList<>(getCurrentList());
+        currentList.add(message);
+        submitList(currentList);
     }
 
     public void clearMessages() {
-        messages.clear();
-        notifyDataSetChanged();
+        submitList(null);
     }
 
     @Override
     public int getItemViewType(int position) {
-        return messages.get(position).isUser() ? VIEW_TYPE_USER : VIEW_TYPE_ASSISTANT;
+        return getItem(position).isUser() ? VIEW_TYPE_USER : VIEW_TYPE_ASSISTANT;
     }
 
     @NonNull
@@ -64,7 +79,7 @@ public class MessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
 
     @Override
     public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
-        ChatMessage message = messages.get(position);
+        ChatMessage message = getItem(position);
         String time = timeFormat.format(new Date(message.getTimestamp()));
 
         if (holder instanceof UserViewHolder) {
@@ -72,11 +87,6 @@ public class MessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         } else if (holder instanceof AssistantViewHolder) {
             ((AssistantViewHolder) holder).bind(message, time);
         }
-    }
-
-    @Override
-    public int getItemCount() {
-        return messages.size();
     }
 
     static class UserViewHolder extends RecyclerView.ViewHolder {
