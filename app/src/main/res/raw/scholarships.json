@@ -45,7 +45,7 @@
     "location": "National",
     "is_saved": false,
     "is_active": true,
-    "application_url": "https://www.chedscholar.org/unifast-scholarship/"
+    "application_url": "https://unifast.gov.ph/"
   },
   {
     "scholarship_name": "DOST-SEI Undergraduate Scholarship",
@@ -57,7 +57,7 @@
     "location": "National",
     "is_saved": false,
     "is_active": true,
-    "application_url": "https://www.sei.dost.gov.ph/"
+    "application_url": "https://science-scholarships.ph/"
   },
   {
     "scholarship_name": "DOST JLSS Scholarship (Junior Level Science Scholarship)",
@@ -69,7 +69,7 @@
     "location": "National",
     "is_saved": false,
     "is_active": true,
-    "application_url": "https://tescholarship.com/dost-jlss-scholarship-2026/"
+    "application_url": "https://jlss.science-scholarships.ph/"
   },
   {
     "scholarship_name": "TESDA Training for Work Scholarship",
@@ -93,7 +93,7 @@
     "location": "National",
     "is_saved": false,
     "is_active": true,
-    "application_url": "https://owwa.gov.ph/"
+    "application_url": "https://scholarship.owwa.gov.ph/"
   },
   {
     "scholarship_name": "GSIS Educational Subsidy Program (ESP)",
@@ -105,7 +105,7 @@
     "location": "National",
     "is_saved": false,
     "is_active": true,
-    "application_url": "https://gsis.gov.ph/"
+    "application_url": "https://www.gsis.gov.ph/"
   },
   {
     "scholarship_name": "UniFAST – Tulong Dunong Program (TDP)",
@@ -141,7 +141,7 @@
     "location": "National",
     "is_saved": false,
     "is_active": true,
-    "application_url": "https://ched.gov.ph/"
+    "application_url": "https://ched.gov.ph/msrs"
   },
   {
     "scholarship_name": "GSIS STEM Scholarship",
@@ -177,7 +177,7 @@
     "location": "Luzon",
     "is_saved": false,
     "is_active": true,
-    "application_url": "https://sm-foundation.org/"
+    "application_url": "https://www.sm-foundation.org/"
   },
   {
     "scholarship_name": "SM College Scholarship",
@@ -189,7 +189,7 @@
     "location": "National",
     "is_saved": false,
     "is_active": true,
-    "application_url": "https://tescholarship.com/sm-scholarship-online-application/"
+    "application_url": "https://www.sm-foundation.org/"
   },
   {
     "scholarship_name": "Tzu Chi Foundation Scholarship",
@@ -201,7 +201,7 @@
     "location": "National",
     "is_saved": false,
     "is_active": true,
-    "application_url": "https://tescholarship.com/tzu-chi-foundation-scholarship/"
+    "application_url": "https://tzuchi.org.ph/apply"
   },
   {
     "scholarship_name": "Ayala Foundation Scholarships",
@@ -213,7 +213,7 @@
     "location": "National",
     "is_saved": false,
     "is_active": true,
-    "application_url": "https://www.chedscholar.org/ayala-foundation-scholarships/"
+    "application_url": "https://www.ayalafoundation.org/"
   },
   {
     "scholarship_name": "Landbank Gawad Patnubay",
@@ -225,7 +225,7 @@
     "location": "National",
     "is_saved": false,
     "is_active": true,
-    "application_url": "https://www.chedscholar.org/fully-funded-scholarships-for-filipinos/"
+    "application_url": "https://www.landbank.com/"
   },
   {
     "scholarship_name": "KCC Foundation Scholarship",
@@ -237,7 +237,7 @@
     "location": "National",
     "is_saved": false,
     "is_active": true,
-    "application_url": "https://tescholarship.com/kcc-foundation-scholarship/"
+    "application_url": "https://www.kcc.com.ph/"
   },
   {
     "scholarship_name": "Security Bank Foundation Scholarship",
@@ -249,7 +249,7 @@
     "location": "National",
     "is_saved": false,
     "is_active": true,
-    "application_url": "https://securitybank.com"
+    "application_url": "https://www.securitybank.com/foundation/external-scholarship-program/"
   },
   {
     "scholarship_name": "Megaworld Foundation Scholarship",
@@ -261,7 +261,7 @@
     "location": "National",
     "is_saved": false,
     "is_active": true,
-    "application_url": "https://megaworldfoundation.org"
+    "application_url": "https://www.megaworldfoundation.com/"
   },
   {
     "scholarship_name": "Aboitiz College Scholarship Program",
@@ -273,7 +273,7 @@
     "location": "National",
     "is_saved": false,
     "is_active": true,
-    "application_url": "https://aboitizfoundation.org"
+    "application_url": "https://aboitizfoundation.org/"
   },
   {
     "scholarship_name": "National Grid Corporation of the Philippines (NGCP) Scholarship",
@@ -285,7 +285,7 @@
     "location": "National",
     "is_saved": false,
     "is_active": true,
-    "application_url": "https://ngcp.ph"
+    "application_url": "https://www.ngcp.ph/"
   },
   {
     "scholarship_name": "PhilDev Science and Engineering Scholarship",
@@ -297,7 +297,7 @@
     "location": "National",
     "is_saved": false,
     "is_active": true,
-    "application_url": "https://phildev.org"
+    "application_url": "https://www.phildev.org/"
   },
   {
     "scholarship_name": "PHINMA National Scholarship",
@@ -309,7 +309,7 @@
     "location": "National",
     "is_saved": false,
     "is_active": true,
-    "application_url": "https://phinmaeducation.com"
+    "application_url": "https://www.phinmaeducation.com/"
   },
   {
     "scholarship_name": "AFPSLAI SEAP Scholarship",
@@ -333,7 +333,7 @@
     "location": "National",
     "is_saved": false,
     "is_active": true,
-    "application_url": "https://jenrafoundation.org/"
+    "application_url": "https://www.jenrafoundation.org/"
   },
   {
     "scholarship_name": "Philippine Army Officer Candidate Course Scholarship",
@@ -345,7 +345,7 @@
     "location": "National",
     "is_saved": false,
     "is_active": true,
-    "application_url": "https://army.mil.ph"
+    "application_url": "https://jointhearmy.ph/"
   },
   {
     "scholarship_name": "Mapúa University Scholarships",
@@ -357,7 +357,7 @@
     "location": "Luzon",
     "is_saved": false,
     "is_active": true,
-    "application_url": "https://www.chedscholar.org/ or contact scholarships@mapua.edu.ph"
+    "application_url": "https://www.mapua.edu.ph/"
   },
   {
     "scholarship_name": "City Scholarship (CDO City Scholarship)",
@@ -369,7 +369,7 @@
     "location": "Mindanao",
     "is_saved": false,
     "is_active": true,
-    "application_url": "https://tescholarship.com/city-scholarship-2026/"
+    "application_url": "https://services.cagayandeoro.gov.ph:8087/cityscholar/apply-scholar"
   },
   {
     "scholarship_name": "ONE Cainta Scholarship",
@@ -381,7 +381,7 @@
     "location": "Luzon",
     "is_saved": false,
     "is_active": true,
-    "application_url": "https://tescholarship.com/one-cainta-scholarship/"
+    "application_url": "https://www.facebook.com/OneCaintaOfficial"
   },
   {
     "scholarship_name": "Nursing Scholarships",
@@ -393,7 +393,7 @@
     "location": "National",
     "is_saved": false,
     "is_active": true,
-    "application_url": "https://www.chedscholar.org/nursing-scholarships-in-the-philippine/"
+    "application_url": "https://www.ched.gov.ph/"
   },
   {
     "scholarship_name": "Engineering Scholarships",
@@ -405,7 +405,7 @@
     "location": "National",
     "is_saved": false,
     "is_active": true,
-    "application_url": "https://www.chedscholar.org/engineering-scholarships-in-the-philippines/"
+    "application_url": "https://www.ched.gov.ph/"
   },
   {
     "scholarship_name": "Medical Scholarships",
@@ -417,7 +417,7 @@
     "location": "National",
     "is_saved": false,
     "is_active": true,
-    "application_url": "https://www.chedscholar.org/medical-scholarships-in-the-philippines/"
+    "application_url": "https://www.ched.gov.ph/"
   },
   {
     "scholarship_name": "Law Scholarships",
@@ -429,7 +429,7 @@
     "location": "National",
     "is_saved": false,
     "is_active": true,
-    "application_url": "https://www.chedscholar.org/law-scholarships-in-the-philippines/"
+    "application_url": "https://www.ched.gov.ph/"
   },
   {
     "scholarship_name": "Japan MEXT Scholarship",
@@ -441,7 +441,7 @@
     "location": "International",
     "is_saved": false,
     "is_active": true,
-    "application_url": "https://www.chedscholar.org/japan-scholarship-for-filipino-students/"
+    "application_url": "https://www.ph.emb-japan.go.jp/itpr_en/mext.html"
   },
   {
     "scholarship_name": "Korean Government Scholarship (KGSP/GKS)",
@@ -453,6 +453,6 @@
     "location": "International",
     "is_saved": false,
     "is_active": true,
-    "application_url": "https://www.chedscholar.org/korean-government-scholarship-kgsp-gks-philippines/"
+    "application_url": "https://overseas.mofa.go.kr/ph-en/index.do"
   }
 ]

@@ -7,6 +7,8 @@ import android.text.TextUtils;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.TextView;
+import android.os.Handler;
+import android.os.Looper;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.ViewModelProvider;
@@ -68,7 +70,9 @@ public class SignupActivity extends AppCompatActivity {
                     DialogManager.showSuccessDialog(SignupActivity.this,
                             "Welcome to IskolarPH!",
                             "Your account has been created. Please check your email to verify your account.");
-                    navigateToEmailVerification();
+                    new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                        navigateToEmailVerification();
+                    }, 1500); // Wait for the dialog to auto-dismiss before navigating
                     break;
                 case ERROR:
                 case VALIDATION_ERROR:

@@ -3,6 +3,7 @@ package com.example.iskolarphh.ui;
 import android.content.Context;
 import android.os.Handler;
 import android.os.Looper;
+import android.app.Activity;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -27,6 +28,15 @@ public class DialogManager {
         // Private constructor to prevent instantiation
     }
 
+    private static boolean isSafeToDisplayDialog(Context context) {
+        if (context == null) return false;
+        if (context instanceof Activity) {
+            Activity activity = (Activity) context;
+            return !activity.isFinishing() && !activity.isDestroyed();
+        }
+        return true;
+    }
+
     /**
      * Shows a friendly error dialog with a clear message and actionable guidance.
      *
@@ -42,6 +52,8 @@ public class DialogManager {
                                        @Nullable String actionLabel,
                                        @Nullable Runnable actionCallback) {
         runOnUiThread(() -> {
+            if (!isSafeToDisplayDialog(context)) return;
+
             MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(context)
                     .setTitle(title)
                     .setMessage(message)
@@ -102,6 +114,8 @@ public class DialogManager {
                                                @NonNull Runnable onConfirm,
                                                @Nullable Runnable onCancel) {
         runOnUiThread(() -> {
+            if (!isSafeToDisplayDialog(context)) return;
+
             MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(context)
                     .setTitle(title)
                     .setMessage(message)
@@ -130,6 +144,8 @@ public class DialogManager {
                                           @NonNull String title,
                                           @NonNull String message) {
         runOnUiThread(() -> {
+            if (!isSafeToDisplayDialog(context)) return;
+
             AlertDialog dialog = new MaterialAlertDialogBuilder(context)
                     .setTitle(title)
                     .setMessage(message)
@@ -140,7 +156,7 @@ public class DialogManager {
 
             // Auto-dismiss after delay
             new Handler(Looper.getMainLooper()).postDelayed(() -> {
-                if (dialog.isShowing()) {
+                if (dialog.isShowing() && isSafeToDisplayDialog(context)) {
                     dialog.dismiss();
                 }
             }, DIALOG_DISMISS_DELAY_MS);

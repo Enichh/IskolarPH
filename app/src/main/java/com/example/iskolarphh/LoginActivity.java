@@ -76,8 +76,9 @@ public class LoginActivity extends AppCompatActivity {
                 case NOT_VERIFIED:
                     DialogManager.showErrorDialog(LoginActivity.this,
                             "Verification Required",
-                            "For your security, we need to verify your email before you can access your account.");
-                    navigateToEmailVerification();
+                            "For your security, we need to verify your email before you can access your account.",
+                            null,
+                            () -> navigateToEmailVerification());
                     break;
                 case ERROR:
                     btnLogin.setEnabled(true);
