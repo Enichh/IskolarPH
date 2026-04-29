@@ -81,7 +81,8 @@
                 android:hint="Ask about scholarships..."
                 android:inputType="textMultiLine"
                 android:maxLines="3"
-                android:minHeight="48dp" />
+                android:minHeight="48dp"
+                android:textColor="#000000" />
         </com.google.android.material.textfield.TextInputLayout>
 
         <com.google.android.material.floatingactionbutton.FloatingActionButton

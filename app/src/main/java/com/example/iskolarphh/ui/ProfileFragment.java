@@ -198,6 +198,7 @@ public class ProfileFragment extends Fragment {
             if (success != null && success) {
                 populateDisplayFields();
                 setEditMode(false);
+                DialogManager.showProfileSaveSuccess(requireContext(), getView());
             }
         });
 

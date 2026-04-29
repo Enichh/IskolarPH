@@ -179,7 +179,6 @@ public class ProfileViewModel extends AndroidViewModel {
                 public void onUpdateComplete(int rowsAffected) {
                     if (rowsAffected > 0) {
                         updateSuccess.postValue(true);
-                        errorMessage.postValue("Your profile has been updated successfully!");
                     } else {
                         updateSuccess.postValue(false);
                         errorMessage.postValue("We couldn't save your changes. Please try again or check your connection.");

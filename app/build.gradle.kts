@@ -5,6 +5,13 @@ plugins {
     id("com.google.gms.google-services")
 }
 
+// Get API configuration from local.properties
+val localProperties = Properties()
+val localPropertiesFile = rootProject.file("local.properties")
+if (localPropertiesFile.exists()) {
+    localProperties.load(localPropertiesFile.inputStream())
+}
+
 android {
     namespace = "com.example.iskolarphh"
     compileSdk = 36 // Updated to a simpler syntax if possible, but keeping consistency
@@ -26,8 +33,24 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        create("release") {
+            val keystoreFile = file("../keystore.jks")
+            if (keystoreFile.exists()) {
+                storeFile = keystoreFile
+                storePassword = localProperties.getProperty("KEYSTORE_PASSWORD", "")
+                keyAlias = localProperties.getProperty("KEY_ALIAS", "")
+                keyPassword = localProperties.getProperty("KEY_PASSWORD", "")
+            }
+        }
+    }
+
     buildTypes {
         release {
+            val keystoreFile = file("../keystore.jks")
+            if (keystoreFile.exists()) {
+                signingConfig = signingConfigs.getByName("release")
+            }
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
@@ -98,12 +121,7 @@ dependencies {
     testImplementation("androidx.arch.core:core-testing:2.2.0")
 }
 
-// Get API configuration from local.properties
-val localProperties = Properties()
-val localPropertiesFile = rootProject.file("local.properties")
-if (localPropertiesFile.exists()) {
-    localProperties.load(localPropertiesFile.inputStream())
-}
+// API Configuration
 android.defaultConfig.buildConfigField("String", "LONGCAT_API_KEY", "\"${localProperties.getProperty("LONGCAT_API_KEY", "")}\"")
 android.defaultConfig.buildConfigField("String", "LONGCAT_API_BASE_URL", "\"${localProperties.getProperty("LONGCAT_API_BASE_URL", "https://api.example.com")}\"")
 
