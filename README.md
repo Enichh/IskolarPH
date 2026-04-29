@@ -42,10 +42,23 @@ ISKOLARPH helps Filipino students discover and apply for scholarships that match
 
 ### Authentication & Security
 
-- Secure user registration with Firebase-based authentication and email verification
-- Password reset functionality via email
-- Persistent login with secure token handling
-- Automatic cleanup of stale auth sessions on fresh installs
+- **Hybrid Authentication System**: Firebase Auth for user management + Supabase for email verification
+- **Two-Factor Authentication**: Email verification codes via Supabase Edge Functions for enhanced security
+- **Privacy Compliance**: Philippine Data Privacy Act (RA 10173) compliant consent management
+- **Session Management**: 24-hour cached sessions with automatic expiry
+- **Password Reset**: Secure code-based verification with Firebase reset email delivery
+- **Fresh Install Security**: Automatic cleanup of stale Firebase auth sessions on new installations
+- **IP Address Tracking**: Security logging with real IP address for verification requests
+
+### Privacy & Compliance
+
+- **Philippine Data Privacy Act (RA 10173) Compliance**: Full compliance with Philippine data protection laws
+- **Explicit Consent Management**: Granular consent controls for basic data processing and location services
+- **Consent Versioning**: Tracks privacy policy version and app version for audit trails
+- **Data Minimization**: Only collects necessary personal information for scholarship matching
+- **Right to Withdraw**: Users can manage privacy settings and withdraw consent
+- **Secure Data Storage**: Encrypted storage of personal data in Room database with Firebase UID mapping
+- **Audit Logging**: Complete consent history with timestamps for compliance reporting
 
 ### Scholarship Management
 
