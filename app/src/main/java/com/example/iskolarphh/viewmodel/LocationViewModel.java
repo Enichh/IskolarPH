@@ -97,6 +97,13 @@ public class LocationViewModel extends AndroidViewModel {
     @Override
     protected void onCleared() {
         super.onCleared();
-        geocoderService.close();
+        // Close GeocoderService executor
+        if (geocoderService != null) {
+            geocoderService.close();
+        }
+        // Shutdown LocationFlowManager executor
+        if (locationFlowManager != null) {
+            locationFlowManager.shutdown();
+        }
     }
 }

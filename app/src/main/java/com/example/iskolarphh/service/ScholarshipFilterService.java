@@ -30,21 +30,16 @@ public class ScholarshipFilterService {
         if (eligibilityCriteria == null) {
             return null;
         }
-        java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("(\\d+\\.?\\d*)%");
-        java.util.regex.Matcher matcher = pattern.matcher(eligibilityCriteria);
-        if (matcher.find()) {
-            try {
-                double percentage = Double.parseDouble(matcher.group(1));
-                return percentage / 100.0 * 4.0;
-            } catch (NumberFormatException e) {
-                return null;
-            }
-        }
-        java.util.regex.Pattern gpaPattern = java.util.regex.Pattern.compile("(\\d+\\.?\\d*)");
+        // First try to find explicit GPA mentions (e.g., "GPA of 3.0", "3.5 GPA")
+        java.util.regex.Pattern gpaPattern = java.util.regex.Pattern.compile("(?i)(?:gpa\\s*(?:of|:)?\\s*)?(\\d+\\.?\\d*)");
         java.util.regex.Matcher gpaMatcher = gpaPattern.matcher(eligibilityCriteria);
         if (gpaMatcher.find()) {
             try {
-                return Double.parseDouble(gpaMatcher.group(1));
+                double gpa = Double.parseDouble(gpaMatcher.group(1));
+                // Only return if it's a valid GPA range (typically 0-5.0 for Philippines)
+                if (gpa >= 0 && gpa <= 5.0) {
+                    return gpa;
+                }
             } catch (NumberFormatException e) {
                 return null;
             }

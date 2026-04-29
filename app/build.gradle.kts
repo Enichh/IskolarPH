@@ -87,7 +87,8 @@ dependencies {
     annotationProcessor(libs.glide.compiler)
 
     // LeakCanary for memory leak detection (debug only)
-    debugImplementation(libs.leakcanary.android)
+    // Temporarily disabled due to main thread blocking during startup
+    // debugImplementation(libs.leakcanary.android)
 
     // Unit Testing
     testImplementation("org.mockito:mockito-core:5.7.0")

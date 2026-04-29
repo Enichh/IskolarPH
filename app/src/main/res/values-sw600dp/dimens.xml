@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Dimensions for tablets (sw600dp) -->
+    
+    <!-- Margins - larger for tablets -->
+    <dimen name="margin_extra_small">8dp</dimen>
+    <dimen name="margin_small">16dp</dimen>
+    <dimen name="margin_medium">24dp</dimen>
+    <dimen name="margin_large">32dp</dimen>
+    <dimen name="margin_extra_large">48dp</dimen>
+    
+    <!-- Padding - larger for tablets -->
+    <dimen name="padding_small">12dp</dimen>
+    <dimen name="padding_medium">16dp</dimen>
+    <dimen name="padding_large">24dp</dimen>
+    <dimen name="padding_extra_large">32dp</dimen>
+    
+    <!-- Text sizes - slightly larger for tablets -->
+    <dimen name="text_size_extra_small">14sp</dimen>
+    <dimen name="text_size_small">16sp</dimen>
+    <dimen name="text_size_medium">18sp</dimen>
+    <dimen name="text_size_large">20sp</dimen>
+    <dimen name="text_size_extra_large">22sp</dimen>
+    <dimen name="text_size_title">28sp</dimen>
+    <dimen name="text_size_header">36sp</dimen>
+    
+    <!-- Component sizes -->
+    <dimen name="header_height">64dp</dimen>
+    <dimen name="card_corner_radius">16dp</dimen>
+    <dimen name="button_height">64dp</dimen>
+    <dimen name="icon_size_small">32dp</dimen>
+    <dimen name="icon_size_medium">40dp</dimen>
+    <dimen name="icon_size_large">48dp</dimen>
+    <dimen name="logo_size">120dp</dimen>
+    
+    <!-- Card heights -->
+    <dimen name="dashboard_card_height">160dp</dimen>
+    
+    <!-- Elevation -->
+    <dimen name="elevation_small">4dp</dimen>
+    <dimen name="elevation_medium">6dp</dimen>
+    <dimen name="elevation_large">12dp</dimen>
+</resources>

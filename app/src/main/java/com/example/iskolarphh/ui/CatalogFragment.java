@@ -11,7 +11,6 @@ import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -19,14 +18,16 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
-import com.example.iskolarphh.database.entity.Scholarship;
-import java.util.List;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.iskolarphh.R;
+import com.example.iskolarphh.database.entity.Scholarship;
 import com.example.iskolarphh.di.ViewModelFactory;
+import com.example.iskolarphh.ui.DialogManager;
 import com.example.iskolarphh.viewmodel.CatalogViewModel;
+
+import java.util.List;
 
 public class CatalogFragment extends Fragment {
 
@@ -35,6 +36,7 @@ public class CatalogFragment extends Fragment {
 
     private TextView tvLocationHeader;
     private ImageButton btnRefreshLocation;
+    private TextView tvFilterStatus;
 
     @Nullable
     @Override
@@ -48,6 +50,7 @@ public class CatalogFragment extends Fragment {
         setupRecyclerView(view);
         setupSearch(view);
         setupFilters(view);
+        setupFilterStatus(view);
         setupLocationHeader(view);
         observeViewModel();
 
@@ -67,10 +70,23 @@ public class CatalogFragment extends Fragment {
 
             @Override
             public void onSaveClick(Scholarship scholarship) {
-                catalogViewModel.updateScholarshipSaved(scholarship);
-                adapter.notifyItemChanged(adapter.getCurrentList().indexOf(scholarship));
-                String message = scholarship.isSaved() ? "Scholarship saved" : "Scholarship removed from saved";
-                Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show();
+                boolean wasSaved = scholarship.isSaved();
+                String scholarshipName = scholarship.getScholarshipName();
+
+                DialogManager.showSaveScholarshipConfirmation(
+                        requireContext(),
+                        scholarshipName,
+                        !wasSaved,
+                        () -> {
+                            catalogViewModel.updateScholarshipSaved(scholarship);
+                            adapter.notifyItemChanged(adapter.getCurrentList().indexOf(scholarship));
+                            String message = !wasSaved ? "Scholarship saved successfully" : "Scholarship removed from saved";
+                            if (getView() != null) {
+                                DialogManager.showSuccessSnackbar(getView(), message);
+                            }
+                        },
+                        null
+                );
             }
         });
         recyclerView.setAdapter(adapter);
@@ -107,6 +123,10 @@ public class CatalogFragment extends Fragment {
         btnRefreshLocation.setOnClickListener(v -> refreshLocation());
     }
 
+    private void setupFilterStatus(View view) {
+        tvFilterStatus = view.findViewById(R.id.tvFilterStatus);
+    }
+
     private void observeViewModel() {
         catalogViewModel.loadStudentData().observe(getViewLifecycleOwner(), student -> {
             if (student != null) {
@@ -125,9 +145,15 @@ public class CatalogFragment extends Fragment {
             tvLocationHeader.setText(header);
         });
 
+        catalogViewModel.getFilterStatus().observe(getViewLifecycleOwner(), status -> {
+            if (tvFilterStatus != null && status != null) {
+                tvFilterStatus.setText(status);
+            }
+        });
+
         catalogViewModel.getErrorMessage().observe(getViewLifecycleOwner(), error -> {
             if (error != null && !error.isEmpty()) {
-                Toast.makeText(requireContext(), error, Toast.LENGTH_SHORT).show();
+                DialogManager.showErrorDialog(requireContext(), "Oops", error);
             }
         });
     }

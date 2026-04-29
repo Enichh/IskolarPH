@@ -12,32 +12,33 @@
     <!-- HEADER -->
     <RelativeLayout
         android:layout_width="match_parent"
-        android:layout_height="80dp"
-        android:background="#001F3F"
-        android:padding="16dp">
+        android:layout_height="@dimen/header_height"
+        android:background="#001F3F">
 
 
 
         <!-- Logo and Text -->
         <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_width="217dp"
+            android:layout_height="40dp"
             android:layout_centerInParent="true"
             android:gravity="center"
             android:orientation="horizontal">
 
             <ImageView
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:src="@drawable/logo_iskolar_ph"
-                android:layout_marginEnd="10dp"/>
+                android:id="@+id/ivLogo"
+                android:layout_width="47dp"
+                android:layout_height="47dp"
+                android:layout_marginEnd="@dimen/margin_small"
+                android:src="@drawable/logo_iskolar_ph" />
 
             <TextView
+                android:id="@+id/tvHeaderName"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="ISKOLAR PH"
                 android:textColor="#FFFFFF"
-                android:textSize="25sp"
+                android:textSize="@dimen/text_size_title"
                 android:textStyle="bold" />
         </LinearLayout>
     </RelativeLayout>
@@ -45,16 +46,22 @@
     <!-- Header Underline -->
     <View
         android:layout_width="match_parent"
-        android:layout_height="2dp"
+        android:layout_height="@dimen/margin_extra_small"
+        android:layout_marginTop="@dimen/margin_small"
         android:background="#D4A017"/>
 
     <!-- Title, Search Bar, and Separator -->
-    <LinearLayout
+    <ScrollView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="12dp"
         android:background="#001F3F">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="@dimen/padding_medium"
+            android:background="#001F3F">
 
         <!-- TITLE -->
         <TextView
@@ -62,19 +69,19 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Scholarship Catalog"
-            android:textSize="22sp"
+            android:textSize="@dimen/text_size_large"
             android:textStyle="bold"
             android:textColor="#FFFFFF"
-            android:layout_marginHorizontal="4dp"
-            android:paddingBottom="12dp"/>
+            android:layout_marginHorizontal="@dimen/margin_extra_small"
+            android:paddingBottom="@dimen/margin_medium"/>
 
         <!-- SEARCH BAR WITH FILTERS -->
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginHorizontal="4dp"
-            app:cardCornerRadius="12dp"
-            app:cardElevation="2dp"
+            android:layout_marginHorizontal="@dimen/margin_extra_small"
+            app:cardCornerRadius="@dimen/card_corner_radius"
+            app:cardElevation="@dimen/elevation_small"
             app:strokeColor="#E0E0E0"
             app:strokeWidth="1dp"
             app:cardBackgroundColor="#FFFFFF">
@@ -84,24 +91,24 @@
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
                 android:gravity="center_vertical"
-                android:paddingHorizontal="12dp"
+                android:paddingHorizontal="@dimen/padding_medium"
                 android:paddingVertical="4dp">
 
                 <ImageView
-                    android:layout_width="20dp"
-                    android:layout_height="20dp"
+                    android:layout_width="@dimen/icon_size_small"
+                    android:layout_height="@dimen/icon_size_small"
                     android:src="@drawable/ic_search"
                     app:tint="#666666"/>
 
                 <EditText
                     android:id="@+id/et_search"
                     android:layout_width="0dp"
-                    android:layout_height="40dp"
+                    android:layout_height="@dimen/button_height"
                     android:layout_weight="1"
                     android:background="@android:color/transparent"
                     android:hint="Search scholarships..."
-                    android:textSize="14sp"
-                    android:paddingHorizontal="8dp"
+                    android:textSize="@dimen/text_size_small"
+                    android:paddingHorizontal="@dimen/margin_small"
                     android:inputType="text"
                     android:maxLines="1"/>
 
@@ -110,13 +117,13 @@
                     android:layout_width="1dp"
                     android:layout_height="24dp"
                     android:background="#E0E0E0"
-                    android:layout_marginHorizontal="8dp"/>
+                    android:layout_marginHorizontal="@dimen/margin_extra_small"/>
 
                 <!-- Location Filter -->
                 <ImageView
                     android:id="@+id/btn_filter_location"
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
+                    android:layout_height="@dimen/icon_size_medium"
+                    android:layout_width="@dimen/icon_size_medium"
                     android:src="@drawable/ic_filter_list"
                     app:tint="#1F2F46"
                     android:contentDescription="Filter by Location"
@@ -124,27 +131,14 @@
                     android:focusable="true"
                     android:background="?attr/selectableItemBackgroundBorderless"/>
 
-                <!-- Date Filter -->
-                <ImageView
-                    android:id="@+id/btn_filter_date"
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
-                    android:src="@drawable/ic_calendar"
-                    app:tint="#1F2F46"
-                    android:layout_marginStart="8dp"
-                    android:contentDescription="Filter by Date"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:background="?attr/selectableItemBackgroundBorderless"/>
-
                 <!-- GPA Filter -->
                 <ImageView
                     android:id="@+id/btn_filter_gpa"
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
+                    android:layout_height="@dimen/icon_size_medium"
+                    android:layout_width="@dimen/icon_size_medium"
                     android:src="@android:drawable/ic_menu_sort_by_size"
                     app:tint="#1F2F46"
-                    android:layout_marginStart="8dp"
+                    android:layout_marginStart="@dimen/margin_small"
                     android:contentDescription="Filter by GPA"
                     android:clickable="true"
                     android:focusable="true"
@@ -158,9 +152,9 @@
             android:layout_width="match_parent"
             android:layout_height="1dp"
             android:background="#D4A017"
-            android:layout_marginTop="20dp"
-            android:layout_marginBottom="8dp"
-            android:layout_marginHorizontal="12dp"/>
+            android:layout_marginTop="@dimen/margin_large"
+            android:layout_marginBottom="@dimen/margin_small"
+            android:layout_marginHorizontal="@dimen/padding_medium"/>
 
         <!-- Location Header -->
         <LinearLayout
@@ -168,8 +162,8 @@
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:gravity="center_vertical"
-            android:paddingHorizontal="12dp"
-            android:paddingBottom="8dp">
+            android:paddingHorizontal="@dimen/padding_medium"
+            android:paddingBottom="@dimen/margin_small">
 
             <TextView
                 android:id="@+id/tvLocationHeader"
@@ -177,7 +171,7 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:text="All Scholarships"
-                android:textSize="16sp"
+                android:textSize="@dimen/text_size_medium"
                 android:textStyle="bold"
                 android:textColor="#FFFFFF" />
 
@@ -186,11 +180,24 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:background="?attr/selectableItemBackgroundBorderless"
-                android:padding="8dp"
+                android:paddingTop="@dimen/margin_small"
                 android:src="@android:drawable/ic_menu_rotate"
                 app:tint="#FFFFFF" />
         </LinearLayout>
+
+        <!-- Filter Status -->
+        <TextView
+            android:id="@+id/tvFilterStatus"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Location: All | GPA Filter: OFF"
+            android:textSize="12sp"
+            android:textColor="#D4A017"
+            android:paddingHorizontal="@dimen/padding_medium"
+            android:paddingBottom="@dimen/margin_small"
+            android:gravity="center" />
     </LinearLayout>
+    </ScrollView>
 
     <!-- Scholarship Cards -->
     <androidx.recyclerview.widget.RecyclerView
@@ -199,7 +206,7 @@
         android:layout_height="0dp"
         android:layout_weight="1"
         android:clipToPadding="false"
-        android:paddingHorizontal="12dp"
-        android:paddingTop="8dp"
+        android:paddingHorizontal="@dimen/padding_medium"
+        android:paddingTop="@dimen/margin_small"
         android:paddingBottom="106dp" />
 </LinearLayout>

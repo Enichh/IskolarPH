@@ -34,7 +34,20 @@
     <string name="header_scholarship_program">STI Open Scholarship (SOS)</string>
     <string name="title_scholarship_details">SCHOLARSHIP DETAILS</string>
     <string name="title_important_notes">IMPORTANT NOTES</string>
+    <string name="title_application_link">APPLICATION LINK</string>
 
     <string name="menu_details">Details</string>
     <string name="details">Details</string>
+
+    <!-- Dialog strings -->
+    <string name="dialog_ok">OK</string>
+    <string name="dialog_cancel">Cancel</string>
+    <string name="dialog_confirm">Confirm</string>
+    <string name="dialog_yes">Yes</string>
+    <string name="dialog_no">No</string>
+    <string name="dialog_save">Save</string>
+    <string name="dialog_remove">Remove</string>
+    <string name="dialog_retry">Retry</string>
+    <string name="dialog_stay">Stay</string>
+    <string name="dialog_sign_out">Sign Out</string>
 </resources>

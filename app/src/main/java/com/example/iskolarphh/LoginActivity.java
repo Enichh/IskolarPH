@@ -1,19 +1,22 @@
 package com.example.iskolarphh;
 
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Handler;
 import android.text.TextUtils;
 import android.util.Log;
 import android.widget.Button;
 import android.widget.TextView;
-import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.ViewModelProvider;
 import com.google.android.material.textfield.TextInputEditText;
 import com.example.iskolarphh.di.ViewModelFactory;
+import com.example.iskolarphh.ui.DialogManager;
 import com.example.iskolarphh.viewmodel.LoginViewModel;
+import com.google.firebase.auth.FirebaseAuth;
 
 public class LoginActivity extends AppCompatActivity {
 
@@ -55,20 +58,25 @@ public class LoginActivity extends AppCompatActivity {
         });
 
         observeViewModel();
+        
+        // Pre-fill email if user has cached session
+        prefillEmailFromCache();
     }
 
     private void observeViewModel() {
         loginViewModel.getLoginState().observe(this, state -> {
             switch (state) {
                 case SUCCESS:
-                    Toast.makeText(LoginActivity.this, "Login successful", Toast.LENGTH_SHORT).show();
+                    // Success is handled by navigation - no dialog needed for smooth UX
                     navigateToMain();
                     break;
                 case VERIFIED:
                     navigateToMain();
                     break;
                 case NOT_VERIFIED:
-                    Toast.makeText(LoginActivity.this, "Please verify your email before logging in", Toast.LENGTH_LONG).show();
+                    DialogManager.showErrorDialog(LoginActivity.this,
+                            "Verification Required",
+                            "For your security, we need to verify your email before you can access your account.");
                     navigateToEmailVerification();
                     break;
                 case ERROR:
@@ -84,7 +92,7 @@ public class LoginActivity extends AppCompatActivity {
 
         loginViewModel.getErrorMessage().observe(this, error -> {
             if (error != null && !error.isEmpty()) {
-                Toast.makeText(LoginActivity.this, error, Toast.LENGTH_LONG).show();
+                DialogManager.showAuthError(LoginActivity.this, error);
             }
         });
     }
@@ -140,5 +148,27 @@ public class LoginActivity extends AppCompatActivity {
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         startActivity(intent);
         finish();
+    }
+    
+    private void prefillEmailFromCache() {
+        SharedPreferences prefs = getSharedPreferences("EmailVerificationPrefs", Context.MODE_PRIVATE);
+        String sessionEmail = prefs.getString("session_email", "");
+        boolean hasSession = prefs.getBoolean("login_session", false);
+        long sessionTimestamp = prefs.getLong("session_timestamp", 0);
+        
+        // Only pre-fill if session is still valid
+        long currentTime = System.currentTimeMillis();
+        long sessionDuration = 24 * 60 * 60 * 1000; // 24 hours
+        
+        if (hasSession && !sessionEmail.isEmpty() && (currentTime - sessionTimestamp) < sessionDuration) {
+            etEmail.setText(sessionEmail);
+            Log.d(TAG, "Prefilled email from cache: " + sessionEmail);
+        }
+    }
+    
+    public void logout() {
+        loginViewModel.clearCachedSession();
+        FirebaseAuth.getInstance().signOut();
+        Log.d(TAG, "User logged out, session cleared");
     }
 }

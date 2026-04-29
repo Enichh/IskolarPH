@@ -3,12 +3,16 @@ package com.example.iskolarphh.database.entity;
 import androidx.room.ColumnInfo;
 import androidx.room.Entity;
 import androidx.room.Ignore;
+import androidx.room.Index;
 import androidx.room.PrimaryKey;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
-@Entity(tableName = "students")
+@Entity(
+    tableName = "students",
+    indices = {@Index(value = "firebase_uid", unique = true)}
+)
 public class Student {
     @PrimaryKey(autoGenerate = true)
     private int id;
@@ -45,6 +49,9 @@ public class Student {
 
     @ColumnInfo(name = "contact_number")
     private String contactNumber; // Contact Number
+
+    @ColumnInfo(name = "profile_photo_path")
+    private String profilePhotoPath; // Internal storage path to profile photo
 
     // Constructors
     public Student() {}
@@ -120,6 +127,9 @@ public class Student {
 
     public String getContactNumber() { return contactNumber; }
     public void setContactNumber(String contactNumber) { this.contactNumber = contactNumber; }
+
+    public String getProfilePhotoPath() { return profilePhotoPath; }
+    public void setProfilePhotoPath(String profilePhotoPath) { this.profilePhotoPath = profilePhotoPath; }
 
     // Password hashing method using SHA-256
     private String hashPassword(String password) {

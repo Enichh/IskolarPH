@@ -1,12 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:padding="24dp"
-    android:gravity="center_horizontal"
-    android:background="?attr/colorSurface"
+    android:background="#001F3F"
     android:fitsSystemWindows="true">
 
     <!-- Progress Bar -->
@@ -15,129 +12,162 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:visibility="gone"
-        android:layout_marginBottom="16dp" />
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
 
-    <!-- Email Icon -->
-    <ImageView
-        android:layout_width="80dp"
-        android:layout_height="80dp"
-        android:src="@drawable/ic_email"
-        android:layout_marginTop="32dp"
-        android:layout_marginBottom="16dp"
-        android:contentDescription="Email verification icon" />
+    <!-- Scrollable Content -->
+    <ScrollView
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:fillViewport="true"
+        android:padding="@dimen/margin_large"
+        android:clipToPadding="false"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
 
-    <!-- Title -->
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+    <!-- App Title -->
     <TextView
+        android:id="@+id/tvAppTitle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Verify Your Email"
-        android:textSize="24sp"
+        android:text="IskolarPH"
+        android:textColor="#FFFFFF"
+        android:textSize="@dimen/text_size_header"
         android:textStyle="bold"
-        android:textColor="?attr/colorOnSurface"
-        android:layout_marginBottom="8dp" />
+        android:letterSpacing="0.05"
+        app:layout_constraintBottom_toTopOf="@id/tvSubtitle"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_chainStyle="packed" />
 
-    <!-- Email Display -->
+    <!-- Subtitle -->
     <TextView
-        android:id="@+id/tvEmail"
+        android:id="@+id/tvSubtitle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="user@example.com"
-        android:textSize="16sp"
-        android:textColor="?attr/colorPrimary"
-        android:layout_marginBottom="16dp" />
+        android:textSize="@dimen/text_size_medium"
+        android:layout_marginTop="@dimen/margin_small"
+        app:layout_constraintBottom_toTopOf="@id/cardForm"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tvAppTitle" />
 
-    <!-- Verification Status -->
-    <TextView
-        android:id="@+id/tvStatus"
-        android:layout_width="wrap_content"
+    <!-- Form Container -->
+    <androidx.cardview.widget.CardView
+        android:id="@+id/cardForm"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:text="Status: Not Verified"
-        android:textSize="16sp"
-        android:textStyle="bold"
-        android:textColor="@android:color/holo_red_dark"
-        android:layout_marginBottom="16dp" />
+        android:layout_marginTop="@dimen/margin_extra_large"
+        app:cardBackgroundColor="#FFFFFF"
+        app:cardCornerRadius="@dimen/card_corner_radius"
+        app:cardElevation="@dimen/elevation_large"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tvSubtitle"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintVertical_chainStyle="packed">
 
-    <!-- Instruction Message -->
-    <TextView
-        android:id="@+id/tvMessage"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Enter the 6-digit code sent to your email"
-        android:textSize="14sp"
-        android:textAlignment="center"
-        android:layout_marginBottom="16dp"
-        android:lineSpacingMultiplier="1.2" />
-
-    <!-- Code Input -->
-    <com.google.android.material.textfield.TextInputLayout
-        android:id="@+id/tilCode"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:hint="Enter 6-digit code"
-        android:layout_marginBottom="16dp"
-        app:counterEnabled="true"
-        app:counterMaxLength="6"
-        style="@style/Widget.Material3.TextInputLayout.OutlinedBox">
-
-        <com.google.android.material.textfield.TextInputEditText
-            android:id="@+id/etCode"
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:inputType="number"
-            android:maxLength="6"
-            android:textAlignment="center"
-            android:textSize="20sp" />
-    </com.google.android.material.textfield.TextInputLayout>
+            android:orientation="vertical"
+            android:padding="@dimen/padding_extra_large">
 
-    <!-- Timer Display -->
-    <TextView
-        android:id="@+id/tvTimer"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text=""
-        android:textSize="12sp"
-        android:textColor="?attr/colorOnSurfaceVariant"
-        android:visibility="gone"
-        android:layout_marginBottom="16dp" />
+            <!-- Email Display -->
+            <TextView
+                android:id="@+id/tvEmail"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="user@example.com"
+                android:textSize="@dimen/text_size_small"
+                android:textColor="#001F3F"
+                android:textAlignment="center"
+                android:layout_marginBottom="@dimen/margin_medium" />
 
-    <!-- Verify Code Button -->
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/btnVerifyCode"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Verify Code"
-        android:layout_marginBottom="8dp"
-        app:cornerRadius="8dp" />
+            <!-- Verification Status -->
+            <TextView
+                android:id="@+id/tvStatus"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Status: Not Verified"
+                android:textSize="@dimen/text_size_medium"
+                android:textStyle="bold"
+                android:textColor="#DC3545"
+                android:textAlignment="center"
+                android:layout_marginBottom="@dimen/margin_medium" />
 
-    <!-- Resend Code Button -->
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/btnResend"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Resend Code"
-        android:layout_marginBottom="8dp"
-        app:cornerRadius="8dp"
-        style="@style/Widget.Material3.Button.OutlinedButton" />
+            <!-- Instruction Message -->
+            <TextView
+                android:id="@+id/tvMessage"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Enter the 6-digit code sent to your email"
+                android:textSize="@dimen/text_size_small"
+                android:textColor="#666666"
+                android:textAlignment="center"
+                android:layout_marginBottom="@dimen/margin_medium"
+                android:lineSpacingMultiplier="1.2" />
 
-    <!-- Continue Button -->
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/btnContinue"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Continue to App"
-        android:enabled="false"
-        android:alpha="0.5"
-        android:layout_marginBottom="16dp"
-        app:cornerRadius="8dp" />
+            <!-- Code Input -->
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/tilCode"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Enter 6-digit code"
+                android:layout_marginBottom="@dimen/margin_medium"
+                app:boxStrokeColor="#001F3F"
+                app:hintTextColor="#001F3F"
+                app:counterEnabled="true"
+                app:counterMaxLength="6"
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
 
-    <!-- Logout Button -->
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/btnLogout"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Logout"
-        android:textColor="?attr/colorError"
-        app:cornerRadius="8dp"
-        style="@style/Widget.Material3.Button.TextButton" />
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/etCode"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="number"
+                    android:maxLength="6"
+                    android:textAlignment="center"
+                    android:textSize="@dimen/text_size_extra_large"
+                    android:textColor="#001F3F" />
+            </com.google.android.material.textfield.TextInputLayout>
 
-</LinearLayout>
+            <!-- Timer Display -->
+            <TextView
+                android:id="@+id/tvTimer"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text=""
+                android:textSize="@dimen/text_size_extra_small"
+                android:textColor="#666666"
+                android:layout_marginBottom="@dimen/margin_small" />
+
+            
+            <!-- Resend Code Button -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnResend"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Resend Code"
+                android:textColor="#001F3F"
+                android:layout_marginBottom="@dimen/margin_small"
+                app:cornerRadius="@dimen/card_corner_radius"
+                app:strokeColor="#001F3F"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton" />
+
+            
+        </LinearLayout>
+    </androidx.cardview.widget.CardView>
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+    </ScrollView>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

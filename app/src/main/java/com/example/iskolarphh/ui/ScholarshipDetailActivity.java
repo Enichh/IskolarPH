@@ -1,7 +1,9 @@
 package com.example.iskolarphh.ui;
 
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -76,6 +78,7 @@ public class ScholarshipDetailActivity extends AppCompatActivity {
 
         TextView tvHeader = findViewById(R.id.tvHeader);
         TextView tvDescription = findViewById(R.id.tvDescription);
+        TextView tvApplicationLink = findViewById(R.id.tvApplicationLink);
         TextView tvDetails = findViewById(R.id.tvDetails);
         TextView tvNotes = findViewById(R.id.tvNotes);
 
@@ -91,5 +94,21 @@ public class ScholarshipDetailActivity extends AppCompatActivity {
         tvDetails.setText(details);
 
         tvNotes.setText(scholarship.getEligibilityCriteria());
+
+        String applicationUrl = scholarship.getApplicationUrl();
+        if (!TextUtils.isEmpty(applicationUrl)) {
+            tvApplicationLink.setText("Click here to apply");
+            tvApplicationLink.setVisibility(android.view.View.VISIBLE);
+            tvApplicationLink.setOnClickListener(v -> {
+                Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(applicationUrl));
+                startActivity(browserIntent);
+            });
+        } else {
+            tvApplicationLink.setText("No link available");
+            tvApplicationLink.setVisibility(android.view.View.VISIBLE);
+            tvApplicationLink.setClickable(false);
+            tvApplicationLink.setFocusable(false);
+            tvApplicationLink.setTextColor(android.graphics.Color.GRAY);
+        }
     }
 }

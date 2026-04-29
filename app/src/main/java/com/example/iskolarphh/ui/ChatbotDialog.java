@@ -9,7 +9,6 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.ProgressBar;
-import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
@@ -22,6 +21,7 @@ import com.example.iskolarphh.api.RetrofitClient;
 import com.example.iskolarphh.model.ChatMessage;
 import com.example.iskolarphh.model.LongcatRequest;
 import com.example.iskolarphh.model.LongcatResponse;
+import com.example.iskolarphh.ui.DialogManager;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.textfield.TextInputEditText;
 import java.util.ArrayList;
@@ -129,13 +129,17 @@ public class ChatbotDialog extends DialogFragment {
 
     private boolean isInputValid(String input) {
         if (input.length() > MAX_INPUT_LENGTH) {
-            Toast.makeText(requireContext(), "Message too long. Please keep it under " + MAX_INPUT_LENGTH + " characters.", Toast.LENGTH_SHORT).show();
+            DialogManager.showErrorDialog(requireContext(),
+                    "Message Too Long",
+                    "Please keep your message under " + MAX_INPUT_LENGTH + " characters for better responses.");
             return false;
         }
 
         long currentTime = System.currentTimeMillis();
         if (currentTime - lastMessageTime < MIN_MESSAGE_INTERVAL_MS) {
-            Toast.makeText(requireContext(), "Please wait a moment before sending another message.", Toast.LENGTH_SHORT).show();
+            DialogManager.showErrorDialog(requireContext(),
+                    "Please Wait",
+                    "Give us just a moment before sending another message.");
             return false;
         }
 

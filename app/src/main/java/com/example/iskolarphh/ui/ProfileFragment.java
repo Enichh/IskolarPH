@@ -4,6 +4,7 @@ import android.Manifest;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.view.LayoutInflater;
@@ -14,6 +15,10 @@ import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.example.iskolarphh.service.LocationFlowManager;
@@ -23,7 +28,6 @@ import com.example.iskolarphh.repository.StudentRepository;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
@@ -40,6 +44,7 @@ import com.example.iskolarphh.database.entity.Student;
 import com.example.iskolarphh.di.ViewModelFactory;
 import com.example.iskolarphh.ui.LogoutConfirmationDialog;
 import com.example.iskolarphh.viewmodel.ProfileViewModel;
+import com.example.iskolarphh.ui.DialogManager;
 import com.example.iskolarphh.util.LocationConstants;
 
 public class ProfileFragment extends Fragment {
@@ -69,14 +74,15 @@ public class ProfileFragment extends Fragment {
     private Button btnExit;
     private ImageButton btnUseCurrentLocation;
     private Button btnThemeToggle;
-    private ImageButton btnEditToggle;
     private ProgressBar progressBarLocation;
 
     private boolean isEditMode = false;
     private boolean isDarkTheme = false;
+    private boolean isStudentLoaded = false;
 
     private ActivityResultLauncher<Intent> cameraLauncher;
     private ActivityResultLauncher<String> cameraPermissionLauncher;
+    private Bitmap capturedPhotoBitmap;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -89,7 +95,9 @@ public class ProfileFragment extends Fragment {
                 if (isGranted) {
                     openCamera();
                 } else {
-                    Toast.makeText(requireContext(), "Camera permission is required to change photo", Toast.LENGTH_SHORT).show();
+                    DialogManager.showErrorDialog(requireContext(),
+                            "Permission Needed",
+                            "Camera access is required to update your profile photo. Please enable it in your device settings.");
                 }
             }
         );
@@ -104,6 +112,7 @@ public class ProfileFragment extends Fragment {
                         Bitmap imageBitmap = (Bitmap) extras.get("data");
                         if (ivProfilePicture != null && imageBitmap != null) {
                             ivProfilePicture.setImageBitmap(imageBitmap);
+                            capturedPhotoBitmap = imageBitmap;
                         }
                     }
                 }
@@ -155,10 +164,10 @@ public class ProfileFragment extends Fragment {
         etCourse = view.findViewById(R.id.etCourse);
         etContactNumber = view.findViewById(R.id.etContactNumber);
         btnThemeToggle = view.findViewById(R.id.btnThemeToggle);
-        btnEditToggle = view.findViewById(R.id.btnEditToggle);
 
-        // Initialize in view mode
+        // Initialize in view mode, disable edit until student data loads
         setEditMode(false);
+        btnUpdate.setEnabled(false);
     }
 
     private void observeViewModel() {
@@ -169,8 +178,18 @@ public class ProfileFragment extends Fragment {
             public void onChanged(Student student) {
                 if (student != null) {
                     currentStudent = student;
+                    isStudentLoaded = true;
                     populateDisplayFields();
                     populateEditFields();
+                    // Enable Edit button now that data is loaded
+                    if (btnUpdate != null) {
+                        btnUpdate.setEnabled(true);
+                    }
+                } else {
+                    isStudentLoaded = false;
+                    if (btnUpdate != null) {
+                        btnUpdate.setEnabled(false);
+                    }
                 }
             }
         });
@@ -184,20 +203,24 @@ public class ProfileFragment extends Fragment {
 
         profileViewModel.getErrorMessage().observe(getViewLifecycleOwner(), error -> {
             if (error != null && !error.isEmpty()) {
-                Toast.makeText(requireContext(), error, Toast.LENGTH_SHORT).show();
+                DialogManager.showErrorDialog(requireContext(), "Something went wrong", error);
             }
         });
 
         profileViewModel.getLocationUpdateStatus().observe(getViewLifecycleOwner(), location -> {
             if (location != null && !location.isEmpty()) {
                 etLocation.setText(location);
-                Toast.makeText(requireContext(), "Location updated: " + location, Toast.LENGTH_SHORT).show();
+                if (getView() != null) {
+                    DialogManager.showSuccessSnackbar(getView(), "Location updated to " + location);
+                }
             }
         });
     }
 
     private void populateDisplayFields() {
         if (currentStudent != null) {
+            // Load profile photo from internal storage if available
+            loadProfilePhoto();
             String fullName = currentStudent.getFirstName();
             if (currentStudent.getMiddleInitial() != null && !currentStudent.getMiddleInitial().isEmpty()) {
                 fullName += " " + currentStudent.getMiddleInitial() + ". " + currentStudent.getLastName();
@@ -248,7 +271,11 @@ public class ProfileFragment extends Fragment {
         btnUpdate.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                updateProfile();
+                if (isEditMode) {
+                    updateProfile();
+                } else {
+                    setEditMode(true);
+                }
             }
         });
 
@@ -273,13 +300,6 @@ public class ProfileFragment extends Fragment {
             }
         });
 
-        btnEditToggle.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                toggleEditMode();
-            }
-        });
-
         btnChangePhoto.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -289,6 +309,14 @@ public class ProfileFragment extends Fragment {
     }
 
     private void updateProfile() {
+        // Guard against saving when student data isn't loaded yet
+        if (!isStudentLoaded || currentStudent == null) {
+            DialogManager.showErrorDialog(requireContext(),
+                    "Please wait",
+                    "Your profile is still loading. Please try again in a moment.");
+            return;
+        }
+
         String fullName = etFullName.getText().toString().trim();
         String gpaStr = etGPA.getText().toString().trim();
         String location = etLocation.getText().toString().trim();
@@ -297,7 +325,45 @@ public class ProfileFragment extends Fragment {
         String course = etCourse.getText().toString().trim();
         String contactNumber = etContactNumber.getText().toString().trim();
 
-        profileViewModel.updateProfile(fullName, gpaStr, location, email, college, course, contactNumber);
+        // Save captured photo to internal storage if available
+        String photoPath = null;
+        if (capturedPhotoBitmap != null) {
+            photoPath = savePhotoToInternalStorage(capturedPhotoBitmap, currentStudent.getFirebaseUid());
+        }
+
+        profileViewModel.updateProfile(fullName, gpaStr, location, email, college, course, contactNumber, photoPath);
+    }
+
+    private String savePhotoToInternalStorage(Bitmap bitmap, String firebaseUid) {
+        try {
+            File directory = new File(requireContext().getFilesDir(), "profile_photos");
+            if (!directory.exists()) {
+                directory.mkdirs();
+            }
+            File photoFile = new File(directory, firebaseUid + "_profile.jpg");
+            FileOutputStream fos = new FileOutputStream(photoFile);
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 90, fos);
+            fos.close();
+            return photoFile.getAbsolutePath();
+        } catch (IOException e) {
+            e.printStackTrace();
+            DialogManager.showErrorDialog(requireContext(),
+                    "Photo Save Failed",
+                    "We couldn't save your profile photo. Please try again or check your device storage.");
+            return null;
+        }
+    }
+
+    private void loadProfilePhoto() {
+        if (currentStudent != null && currentStudent.getProfilePhotoPath() != null) {
+            File photoFile = new File(currentStudent.getProfilePhotoPath());
+            if (photoFile.exists()) {
+                Bitmap bitmap = BitmapFactory.decodeFile(photoFile.getAbsolutePath());
+                if (bitmap != null && ivProfilePicture != null) {
+                    ivProfilePicture.setImageBitmap(bitmap);
+                }
+            }
+        }
     }
 
     private void logout() {
@@ -308,7 +374,9 @@ public class ProfileFragment extends Fragment {
             public void onLogoutConfirmed() {
                 // User confirmed logout
                 profileViewModel.logout();
-                Toast.makeText(requireContext(), "Logged out successfully", Toast.LENGTH_SHORT).show();
+                if (getView() != null) {
+                    DialogManager.showSuccessSnackbar(getView(), "You've been signed out");
+                }
                 requireActivity().finish();
             }
 
@@ -340,7 +408,9 @@ public class ProfileFragment extends Fragment {
 
             @Override
             public void onPermissionDenied() {
-                Toast.makeText(requireContext(), "Location permission denied", Toast.LENGTH_SHORT).show();
+                DialogManager.showErrorDialog(requireContext(),
+                        "Location Access Denied",
+                        "Without location permission, we can't automatically update your location. You can still enter it manually in your profile.");
             }
         });
     }
@@ -379,10 +449,6 @@ public class ProfileFragment extends Fragment {
         }
     }
 
-    private void toggleEditMode() {
-        setEditMode(!isEditMode);
-    }
-
     private void checkCameraPermission() {
         if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.CAMERA)
                 == PackageManager.PERMISSION_GRANTED) {
@@ -397,7 +463,9 @@ public class ProfileFragment extends Fragment {
         try {
             cameraLauncher.launch(takePictureIntent);
         } catch (Exception e) {
-            Toast.makeText(requireContext(), "No camera app found", Toast.LENGTH_SHORT).show();
+            DialogManager.showErrorDialog(requireContext(),
+                    "Camera Not Available",
+                    "We couldn't open your camera app. Please make sure you have a camera app installed.");
         }
     }
 
@@ -419,11 +487,9 @@ public class ProfileFragment extends Fragment {
             editSection.setVisibility(editMode ? View.VISIBLE : View.GONE);
         }
 
-        // Update button icon
-        if (btnEditToggle != null) {
-            btnEditToggle.setImageResource(editMode ? 
-                android.R.drawable.ic_menu_save : 
-                android.R.drawable.ic_menu_edit);
+        // Update button text
+        if (btnUpdate != null) {
+            btnUpdate.setText(editMode ? "Save Profile" : "Edit Profile");
         }
 
         // Toggle photo change button visibility

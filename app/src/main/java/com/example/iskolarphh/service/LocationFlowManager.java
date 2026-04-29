@@ -127,4 +127,13 @@ public class LocationFlowManager {
     public void requestLocationPermissions(Activity activity, int requestCode) {
         LocationPermissionHandler.checkAndRequestLocationPermissions(activity, requestCode);
     }
+
+    /**
+     * Shutdown the executor service. Call this when the location flow manager is no longer needed.
+     */
+    public void shutdown() {
+        if (executorService != null && !executorService.isShutdown()) {
+            executorService.shutdown();
+        }
+    }
 }

@@ -1,23 +1,17 @@
 package com.example.iskolarphh.ui;
 
-import android.content.Intent;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.LinearLayout;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.cardview.widget.CardView;
 import androidx.fragment.app.Fragment;
-import androidx.lifecycle.LiveData;
 
 import com.example.iskolarphh.database.entity.Scholarship;
 import java.util.List;
-import java.util.ArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import androidx.lifecycle.ViewModelProvider;
@@ -26,6 +20,7 @@ import com.example.iskolarphh.R;
 import com.example.iskolarphh.di.ViewModelFactory;
 import com.example.iskolarphh.viewmodel.DashboardViewModel;
 import com.example.iskolarphh.adapter.ScholarshipAdapter;
+import com.example.iskolarphh.ui.DialogManager;
 import com.example.iskolarphh.util.PerformanceMonitor;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -38,12 +33,13 @@ public class DashboardFragment extends Fragment {
     private ScholarshipAdapter scholarshipAdapter;
     private RecyclerView recyclerView;
     private TextView tvEmptyState;
+    private View loadingIndicator;
 
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
             @Nullable Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.activity_dashboard, container, false);
+        View view = inflater.inflate(R.layout.fragment_dashboard, container, false);
 
         // Initialize modern threading
         executorService = Executors.newSingleThreadExecutor();
@@ -54,7 +50,6 @@ public class DashboardFragment extends Fragment {
 
         initializeViews(view);
         observeViewModel();
-        setupCardListeners(view);
 
         return view;
     }
@@ -74,6 +69,13 @@ public class DashboardFragment extends Fragment {
         recyclerView = view.findViewById(R.id.recyclerViewScholarships);
         tvEmptyState = view.findViewById(R.id.tvEmptyState);
         
+        // Create loading indicator if not present in layout
+        if (view.findViewById(R.id.loadingIndicator) == null) {
+            loadingIndicator = createLoadingIndicator(view);
+        } else {
+            loadingIndicator = view.findViewById(R.id.loadingIndicator);
+        }
+        
         // Setup RecyclerView with optimized configuration
         scholarshipAdapter = new ScholarshipAdapter();
         recyclerView.setAdapter(scholarshipAdapter);
@@ -82,6 +84,28 @@ public class DashboardFragment extends Fragment {
         // Optimize RecyclerView performance
         // Note: setHasFixedSize(false) because RecyclerView height is wrap_content
         recyclerView.setHasFixedSize(false);
+    }
+
+    private View createLoadingIndicator(View parent) {
+        // Create a simple loading indicator programmatically if not in layout
+        android.widget.ProgressBar progressBar = new android.widget.ProgressBar(getContext());
+        progressBar.setVisibility(View.GONE);
+        
+        // Add to parent layout (assuming ConstraintLayout)
+        if (parent instanceof androidx.constraintlayout.widget.ConstraintLayout) {
+            androidx.constraintlayout.widget.ConstraintLayout.LayoutParams params = 
+                new androidx.constraintlayout.widget.ConstraintLayout.LayoutParams(
+                    androidx.constraintlayout.widget.ConstraintLayout.LayoutParams.WRAP_CONTENT,
+                    androidx.constraintlayout.widget.ConstraintLayout.LayoutParams.WRAP_CONTENT);
+            params.topToTop = androidx.constraintlayout.widget.ConstraintLayout.LayoutParams.PARENT_ID;
+            params.bottomToBottom = androidx.constraintlayout.widget.ConstraintLayout.LayoutParams.PARENT_ID;
+            params.startToStart = androidx.constraintlayout.widget.ConstraintLayout.LayoutParams.PARENT_ID;
+            params.endToEnd = androidx.constraintlayout.widget.ConstraintLayout.LayoutParams.PARENT_ID;
+            progressBar.setLayoutParams(params);
+            ((androidx.constraintlayout.widget.ConstraintLayout) parent).addView(progressBar);
+        }
+        
+        return progressBar;
     }
 
     private void observeViewModel() {
@@ -103,54 +127,29 @@ public class DashboardFragment extends Fragment {
             }
         });
 
+        dashboardViewModel.getIsLoading().observe(getViewLifecycleOwner(), isLoading -> {
+            if (isLoading != null) {
+                setLoadingState(isLoading);
+            }
+        });
+
         dashboardViewModel.getErrorMessage().observe(getViewLifecycleOwner(), error -> {
             if (error != null && !error.isEmpty()) {
-                Toast.makeText(requireContext(), error, Toast.LENGTH_SHORT).show();
+                DialogManager.showErrorDialog(requireContext(), "Oops", error);
             }
         });
     }
 
-    private void setupCardListeners(View view) {
-        CardView cardSaved = view.findViewById(R.id.cardSaved);
-        CardView cardCourse = view.findViewById(R.id.cardCourse);
-        CardView cardDeadlines = view.findViewById(R.id.cardDeadlines);
-
-        cardSaved.setOnClickListener(v -> {
-            loadFilteredScholarships("Saved Scholarships", dashboardViewModel.getSavedScholarships());
-        });
-
-        cardCourse.setOnClickListener(v -> {
-            LiveData<com.example.iskolarphh.database.entity.Student> studentLiveData = dashboardViewModel.getCurrentStudent();
-            studentLiveData.observe(getViewLifecycleOwner(), student -> {
-                if (student != null && student.getCourse() != null) {
-                    loadFilteredScholarships("For your Course: " + student.getCourse(), 
-                        dashboardViewModel.searchByCourse(student.getCourse()));
-                } else {
-                    Toast.makeText(requireContext(), "Please set your course in Profile first", Toast.LENGTH_SHORT).show();
-                }
-            });
-        });
-
-        cardDeadlines.setOnClickListener(v -> {
-            loadFilteredScholarships("Upcoming Deadlines", dashboardViewModel.getScholarshipsByDeadline());
-        });
-    }
-
-    private void loadFilteredScholarships(String title, LiveData<List<Scholarship>> data) {
-        View view = getView();
-        if (view == null) return;
+    private void setLoadingState(boolean isLoading) {
+        if (loadingIndicator != null) {
+            loadingIndicator.setVisibility(isLoading ? View.VISIBLE : View.GONE);
+        }
         
-        TextView tvTitle = view.findViewById(R.id.tvRecommendationsTitle);
-        if (tvTitle != null) tvTitle.setText(title);
-        
-        data.observe(getViewLifecycleOwner(), scholarships -> {
-            if (scholarships != null) {
-                displayRecommendations(scholarships);
-            }
-        });
+        // Optionally dim the RecyclerView during loading
+        if (recyclerView != null) {
+            recyclerView.setAlpha(isLoading ? 0.5f : 1.0f);
+        }
     }
-
-
 
     private void displayRecommendations(List<Scholarship> scholarships) {
         long startTime = System.nanoTime();
@@ -160,6 +159,8 @@ public class DashboardFragment extends Fragment {
             // Show empty state
             recyclerView.setVisibility(View.GONE);
             tvEmptyState.setVisibility(View.VISIBLE);
+            tvEmptyState.setText("No scholarships found for your profile. " +
+                "Try updating your location and GPA in your profile for better recommendations.");
         } else {
             // Show scholarships
             recyclerView.setVisibility(View.VISIBLE);

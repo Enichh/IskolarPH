@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Dimensions for small phones (sw360dp) -->
+    
+    <!-- Margins - slightly smaller for compact screens -->
+    <dimen name="margin_extra_small">4dp</dimen>
+    <dimen name="margin_small">8dp</dimen>
+    <dimen name="margin_medium">12dp</dimen>
+    <dimen name="margin_large">16dp</dimen>
+    <dimen name="margin_extra_large">24dp</dimen>
+    
+    <!-- Padding - slightly smaller for compact screens -->
+    <dimen name="padding_small">8dp</dimen>
+    <dimen name="padding_medium">10dp</dimen>
+    <dimen name="padding_large">14dp</dimen>
+    <dimen name="padding_extra_large">20dp</dimen>
+    
+    <!-- Text sizes - slightly smaller for compact screens -->
+    <dimen name="text_size_extra_small">11sp</dimen>
+    <dimen name="text_size_small">13sp</dimen>
+    <dimen name="text_size_medium">15sp</dimen>
+    <dimen name="text_size_large">17sp</dimen>
+    <dimen name="text_size_extra_large">19sp</dimen>
+    <dimen name="text_size_title">22sp</dimen>
+    <dimen name="text_size_header">28sp</dimen>
+    
+    <!-- Component sizes -->
+    <dimen name="header_height">52dp</dimen>
+    <dimen name="card_corner_radius">10dp</dimen>
+    <dimen name="button_height">52dp</dimen>
+    <dimen name="icon_size_small">22dp</dimen>
+    <dimen name="icon_size_medium">28dp</dimen>
+    <dimen name="icon_size_large">36dp</dimen>
+    <dimen name="logo_size">90dp</dimen>
+    
+    <!-- Card heights -->
+    <dimen name="dashboard_card_height">110dp</dimen>
+    
+    <!-- Elevation -->
+    <dimen name="elevation_small">2dp</dimen>
+    <dimen name="elevation_medium">3dp</dimen>
+    <dimen name="elevation_large">6dp</dimen>
+</resources>

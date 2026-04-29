@@ -5,20 +5,35 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#001F3F"
-    android:fitsSystemWindows="true"
-    android:padding="24dp">
+    android:fitsSystemWindows="true">
 
+    <!-- Scrollable Content -->
+    <ScrollView
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:fillViewport="true"
+        android:padding="@dimen/margin_large"
+        android:clipToPadding="false"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
 
     <ImageView
         android:id="@+id/imgLogo"
-        android:layout_width="100dp"
-        android:layout_height="100dp"
+        android:layout_width="@dimen/logo_size"
+        android:layout_height="@dimen/logo_size"
         android:src="@drawable/logo_iskolar_ph"
-        android:layout_marginTop="30dp"
-        android:layout_marginBottom="25dp"
+        android:layout_marginTop="@dimen/margin_large"
+        android:layout_marginBottom="@dimen/margin_medium"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"/>
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/tvAppTitle" />
 
     <!-- App Logo / Title -->
     <TextView
@@ -27,13 +42,13 @@
         android:layout_height="wrap_content"
         android:text="IskolarPH"
         android:textColor="#FFFFFF"
-        android:textSize="32sp"
+        android:textSize="@dimen/text_size_header"
         android:textStyle="bold"
         android:letterSpacing="0.05"
+        app:layout_constraintTop_toBottomOf="@id/imgLogo"
         app:layout_constraintBottom_toTopOf="@id/tvSubtitle"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_chainStyle="packed" />
 
     <!-- Subtitle -->
@@ -43,8 +58,8 @@
         android:layout_height="wrap_content"
         android:text="Welcome Scholar, Explore Your Opportunities"
         android:textColor="#D4AF37"
-        android:textSize="16sp"
-        android:layout_marginTop="8dp"
+        android:textSize="@dimen/text_size_medium"
+        android:layout_marginTop="@dimen/margin_small"
         app:layout_constraintBottom_toTopOf="@id/cardForm"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -55,10 +70,10 @@
         android:id="@+id/cardForm"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="32dp"
+        android:layout_marginTop="@dimen/margin_extra_large"
         app:cardBackgroundColor="#FFFFFF"
-        app:cardCornerRadius="12dp"
-        app:cardElevation="8dp"
+        app:cardCornerRadius="@dimen/card_corner_radius"
+        app:cardElevation="@dimen/elevation_large"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/tvSubtitle"
@@ -69,7 +84,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="24dp">
+            android:padding="@dimen/padding_extra_large">
 
             <!-- Email Input -->
             <com.google.android.material.textfield.TextInputLayout
@@ -93,7 +108,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:hint="Password"
-                android:layout_marginTop="16dp"
+                android:layout_marginTop="@dimen/margin_medium"
                 app:boxStrokeColor="#001F3F"
                 app:hintTextColor="#001F3F"
                 app:passwordToggleEnabled="true"
@@ -115,23 +130,23 @@
                 android:layout_height="wrap_content"
                 android:text="Forgot Password?"
                 android:textColor="#001F3F"
-                android:textSize="14sp"
+                android:textSize="@dimen/text_size_small"
                 android:textStyle="bold"
-                android:layout_marginTop="8dp"
+                android:layout_marginTop="@dimen/margin_small"
                 android:layout_gravity="end" />
 
             <!-- Login Button -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnLogin"
                 android:layout_width="match_parent"
-                android:layout_height="56dp"
-                android:layout_marginTop="24dp"
+                android:layout_height="@dimen/button_height"
+                android:layout_marginTop="@dimen/margin_large"
                 android:text="Log In"
                 android:textColor="#001F3F"
                 android:textStyle="bold"
-                android:textSize="16sp"
+                android:textSize="@dimen/text_size_medium"
                 app:backgroundTint="#D4AF37"
-                app:cornerRadius="8dp" />
+                app:cornerRadius="@dimen/card_corner_radius" />
 
         </LinearLayout>
     </androidx.cardview.widget.CardView>
@@ -143,11 +158,14 @@
         android:layout_height="wrap_content"
         android:text="Don't have an account? Sign Up"
         android:textColor="#FFFFFF"
-        android:textSize="14sp"
-        android:layout_marginBottom="24dp"
+        android:textSize="@dimen/text_size_small"
+        android:layout_marginBottom="@dimen/margin_large"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/cardForm" />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+    </ScrollView>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

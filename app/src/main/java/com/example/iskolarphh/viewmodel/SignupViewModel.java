@@ -9,22 +9,33 @@ import androidx.annotation.NonNull;
 import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
+import com.example.iskolarphh.BuildConfig;
 import com.example.iskolarphh.database.entity.Student;
 import com.example.iskolarphh.repository.StudentRepository;
+import com.example.iskolarphh.repository.PrivacyConsentRepository;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 
 public class SignupViewModel extends AndroidViewModel {
 
+    private static final String PRIVACY_POLICY_VERSION = "1.0";
+
     private final FirebaseAuth mAuth;
     private final StudentRepository studentRepository;
+    private final PrivacyConsentRepository privacyConsentRepository;
     private final MutableLiveData<SignupState> signupState = new MutableLiveData<>();
     private final MutableLiveData<String> errorMessage = new MutableLiveData<>();
 
-    public SignupViewModel(Application application) {
+    public SignupViewModel(Application application, PrivacyConsentRepository privacyConsentRepository) {
+        this(application, privacyConsentRepository, new StudentRepository(application));
+    }
+
+    // Constructor with full dependency injection
+    public SignupViewModel(Application application, PrivacyConsentRepository privacyConsentRepository, StudentRepository studentRepository) {
         super(application);
         mAuth = FirebaseAuth.getInstance();
-        studentRepository = new StudentRepository(application);
+        this.studentRepository = studentRepository;
+        this.privacyConsentRepository = privacyConsentRepository;
     }
 
     public LiveData<SignupState> getSignupState() {
@@ -35,46 +46,54 @@ public class SignupViewModel extends AndroidViewModel {
         return errorMessage;
     }
 
-    public void attemptSignup(String fullName, String email, String password, String confirmPassword) {
+    public void attemptSignup(String fullName, String email, String password, String confirmPassword,
+                              boolean basicConsentGiven, boolean locationConsentGiven) {
+        // Privacy Consent Validation (Philippine DPA Compliance)
+        if (!basicConsentGiven) {
+            errorMessage.postValue("Please agree to our Privacy Policy to create your account. This helps us protect your personal data.");
+            signupState.postValue(SignupState.VALIDATION_ERROR);
+            return;
+        }
+
         // Validation
         if (TextUtils.isEmpty(fullName)) {
-            errorMessage.postValue("Full name is required");
+            errorMessage.postValue("Please enter your full name as it appears on your school records.");
             signupState.postValue(SignupState.VALIDATION_ERROR);
             return;
         }
 
         if (TextUtils.isEmpty(email)) {
-            errorMessage.postValue("Email is required");
+            errorMessage.postValue("Please enter your email address. We'll use this to verify your account and send important updates.");
             signupState.postValue(SignupState.VALIDATION_ERROR);
             return;
         }
 
         if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
-            errorMessage.postValue("Please enter a valid email address");
+            errorMessage.postValue("The email address doesn't look right. Please check and enter a valid email like name@example.com");
             signupState.postValue(SignupState.VALIDATION_ERROR);
             return;
         }
 
         if (TextUtils.isEmpty(password)) {
-            errorMessage.postValue("Password is required");
+            errorMessage.postValue("Please create a password to secure your account.");
             signupState.postValue(SignupState.VALIDATION_ERROR);
             return;
         }
 
         if (password.length() < 6) {
-            errorMessage.postValue("Password must be at least 6 characters");
+            errorMessage.postValue("Your password should be at least 6 characters long for better security.");
             signupState.postValue(SignupState.VALIDATION_ERROR);
             return;
         }
 
         if (TextUtils.isEmpty(confirmPassword)) {
-            errorMessage.postValue("Please confirm your password");
+            errorMessage.postValue("Please confirm your password by entering it again.");
             signupState.postValue(SignupState.VALIDATION_ERROR);
             return;
         }
 
         if (!password.equals(confirmPassword)) {
-            errorMessage.postValue("Passwords do not match");
+            errorMessage.postValue("The passwords don't match. Please make sure both password fields are the same.");
             signupState.postValue(SignupState.VALIDATION_ERROR);
             return;
         }
@@ -108,6 +127,9 @@ public class SignupViewModel extends AndroidViewModel {
 
                             // Save to Room database with callback
                             studentRepository.insert(student, id -> {
+                                // Save privacy consent for Philippine DPA compliance
+                                savePrivacyConsent(user.getUid(), basicConsentGiven, locationConsentGiven);
+
                                 // Run on UI thread
                                 new Handler(Looper.getMainLooper()).post(() -> {
                                     signupState.postValue(SignupState.SUCCESS);
@@ -115,21 +137,21 @@ public class SignupViewModel extends AndroidViewModel {
                             });
                         }
                     } else {
-                        String error = "Registration failed";
+                        String error = "We couldn't complete your registration. Please try again.";
                         if (task.getException() != null) {
                             String errorCode = task.getException().getClass().getSimpleName();
                             switch (errorCode) {
                                 case "FirebaseAuthWeakPasswordException":
-                                    error = "Password is too weak";
+                                    error = "Your password is too weak. Try using a mix of letters, numbers, and symbols.";
                                     break;
                                 case "FirebaseAuthInvalidCredentialsException":
-                                    error = "Invalid email address";
+                                    error = "The email address doesn't look valid. Please check and try again.";
                                     break;
                                 case "FirebaseAuthUserCollisionException":
-                                    error = "An account with this email already exists";
+                                    error = "An account already exists with this email. Try signing in instead.";
                                     break;
                                 default:
-                                    error = task.getException().getMessage();
+                                    error = "Something went wrong: " + task.getException().getMessage();
                                     break;
                             }
                         }
@@ -175,11 +197,40 @@ public class SignupViewModel extends AndroidViewModel {
         return result;
     }
 
+    /**
+     * Save privacy consent record for Philippine Data Privacy Act (RA 10173) compliance.
+     * Records consent timestamp, app version, and privacy policy version.
+     */
+    private void savePrivacyConsent(String firebaseUid, boolean basicConsent, boolean locationConsent) {
+        privacyConsentRepository.saveConsent(
+                firebaseUid,
+                basicConsent,
+                locationConsent,
+                BuildConfig.VERSION_NAME,
+                PRIVACY_POLICY_VERSION,
+                consentId -> {
+                    android.util.Log.d("SignupViewModel", "Privacy consent saved with ID: " + consentId);
+                }
+        );
+    }
+
     public enum SignupState {
         IDLE,
         LOADING,
         SUCCESS,
         ERROR,
         VALIDATION_ERROR
+    }
+
+    @Override
+    protected void onCleared() {
+        super.onCleared();
+        // Shutdown repository executors to prevent thread leaks
+        if (studentRepository != null) {
+            studentRepository.shutdown();
+        }
+        if (privacyConsentRepository != null) {
+            privacyConsentRepository.shutdown();
+        }
     }
 }

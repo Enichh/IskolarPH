@@ -10,12 +10,12 @@ import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.iskolarphh.service.SupabaseVerificationService;
+import com.example.iskolarphh.ui.DialogManager;
 import com.example.iskolarphh.utils.NetworkUtils;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
@@ -37,7 +37,8 @@ public class PasswordResetActivity extends AppCompatActivity {
     private TextInputLayout tilEmail, tilCode, tilNewPassword, tilConfirmPassword;
     private TextInputEditText etEmail, etCode, etNewPassword, etConfirmPassword;
     private TextView tvEmailDisplay, tvTimer;
-    private Button btnSendCode, btnVerifyCode, btnResend, btnResetPassword, btnBackToLogin;
+    private Button btnSendCode, btnVerifyCode, btnResend, btnResetPassword;
+    private TextView btnBackToLogin;
 
     private CountDownTimer countDownTimer;
     private CountDownTimer codeExpiryTimer;
@@ -118,9 +119,9 @@ public class PasswordResetActivity extends AppCompatActivity {
                     public void onSuccess(String message, int expiresIn) {
                         runOnUiThread(() -> {
                             showLoading(false);
-                            Toast.makeText(PasswordResetActivity.this,
-                                    "Reset code sent! Check your email.",
-                                    Toast.LENGTH_LONG).show();
+                            DialogManager.showSuccessDialog(PasswordResetActivity.this,
+                                "Code Sent",
+                                "We've sent a verification code to your email. Please check your inbox and spam folder.");
                             
                             // Switch to code verification layout
                             layoutEmail.setVisibility(View.GONE);
@@ -138,9 +139,9 @@ public class PasswordResetActivity extends AppCompatActivity {
                             showLoading(false);
                             btnSendCode.setEnabled(true);
                             Log.e(TAG, "Failed to send code: " + error);
-                            Toast.makeText(PasswordResetActivity.this,
-                                    "Failed to send code: " + error,
-                                    Toast.LENGTH_LONG).show();
+                            DialogManager.showErrorDialog(PasswordResetActivity.this,
+                                    "Couldn't Send Code",
+                                    "We couldn't send the verification code. " + error + "\n\nPlease try again or check your internet connection.");
                         });
                     }
                 });
@@ -161,9 +162,9 @@ public class PasswordResetActivity extends AppCompatActivity {
                     public void onSuccess(String message, int expiresIn) {
                         runOnUiThread(() -> {
                             showLoading(false);
-                            Toast.makeText(PasswordResetActivity.this,
-                                    "New code sent!",
-                                    Toast.LENGTH_SHORT).show();
+                            DialogManager.showSuccessDialog(PasswordResetActivity.this,
+                                "New Code Sent",
+                                "A new verification code has been sent to your email.");
                             
                             etCode.setText("");
                             tilCode.setError(null);
@@ -181,9 +182,9 @@ public class PasswordResetActivity extends AppCompatActivity {
                         runOnUiThread(() -> {
                             showLoading(false);
                             btnResend.setEnabled(true);
-                            Toast.makeText(PasswordResetActivity.this,
-                                    "Failed to resend: " + error,
-                                    Toast.LENGTH_LONG).show();
+                            DialogManager.showErrorDialog(PasswordResetActivity.this,
+                                    "Couldn't Resend Code",
+                                    "We couldn't resend the code. " + error + "\n\nPlease wait a moment and try again.");
                         });
                     }
                 });
@@ -220,24 +221,25 @@ public class PasswordResetActivity extends AppCompatActivity {
                             }
                             
                             // Code verified successfully, send Firebase reset email immediately
-                            Toast.makeText(PasswordResetActivity.this,
-                                    "Email verified! Sending password reset link...",
-                                    Toast.LENGTH_SHORT).show();
+                            DialogManager.showSuccessDialog(PasswordResetActivity.this,
+                                    "Code Verified",
+                                    "Your code is verified! We're sending a password reset link to your email now.");
                             
                             // Send Firebase password reset email
                             mAuth.sendPasswordResetEmail(currentEmail)
                                     .addOnCompleteListener(resetTask -> {
                                         if (resetTask.isSuccessful()) {
-                                            Toast.makeText(PasswordResetActivity.this,
-                                                    "Password reset link sent! Please check your email.",
-                                                    Toast.LENGTH_LONG).show();
+                                            DialogManager.showSuccessDialog(PasswordResetActivity.this,
+                                                    "Reset Link Sent",
+                                                    "We've sent a password reset link to your email. Please check your inbox to complete the process.");
                                             navigateToLogin();
                                         } else {
-                                            String error = resetTask.getException() != null 
-                                                    ? resetTask.getException().getMessage() 
+                                            String error = resetTask.getException() != null
+                                                    ? resetTask.getException().getMessage()
                                                     : "Failed to send reset email";
-                                            Toast.makeText(PasswordResetActivity.this,
-                                                    error, Toast.LENGTH_LONG).show();
+                                            DialogManager.showErrorDialog(PasswordResetActivity.this,
+                                                    "Couldn't Send Reset Link",
+                                                    error + "\n\nPlease try again or contact support if the problem persists.");
                                             // Show code input again for retry
                                             layoutCode.setVisibility(View.VISIBLE);
                                         }
@@ -259,7 +261,9 @@ public class PasswordResetActivity extends AppCompatActivity {
                                 etCode.setText("");
                             }
                             
-                            Toast.makeText(PasswordResetActivity.this, error, Toast.LENGTH_LONG).show();
+                            DialogManager.showErrorDialog(PasswordResetActivity.this,
+                                    "Verification Failed",
+                                    error + "\n\nPlease check the code and try again, or request a new code.");
                         });
                     }
                 });

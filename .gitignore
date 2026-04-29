@@ -77,3 +77,11 @@ yarn-error.log
 .env
 .env.local
 .env.*.local
+
+# Firebase configuration files
+.firebaserc
+firebase.json
+
+# Supabase configuration files
+supabase/
+skills-lock.json

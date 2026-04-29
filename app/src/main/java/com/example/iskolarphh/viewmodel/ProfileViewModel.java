@@ -5,6 +5,7 @@ import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import com.example.iskolarphh.callback.LocationCallback;
+import com.example.iskolarphh.callback.StudentCallback;
 import com.example.iskolarphh.callback.UpdateCallback;
 import com.example.iskolarphh.database.entity.Student;
 import com.example.iskolarphh.repository.StudentRepository;
@@ -65,38 +66,94 @@ public class ProfileViewModel extends AndroidViewModel {
     public void loadStudentData() {
         FirebaseUser firebaseUser = firebaseAuth.getCurrentUser();
         if (firebaseUser != null) {
-            LiveData<Student> studentLiveData = studentRepository.getStudentByFirebaseUid(firebaseUser.getUid());
-            studentLiveData.observeForever(student -> {
+            String uid = firebaseUser.getUid();
+            String email = firebaseUser.getEmail() != null ? firebaseUser.getEmail() : "";
+            
+            // Use async method to load student data
+            studentRepository.getStudentByFirebaseUidAsync(uid, student -> {
                 if (student != null) {
+                    // Student found in database
                     currentStudent.postValue(student);
+                } else {
+                    // No student record found (old account or data loss)
+                    // Create a default student record for backwards compatibility
+                    Student newStudent = createDefaultStudent(uid, email);
+                    studentRepository.insert(newStudent, id -> {
+                        if (id > 0) {
+                            newStudent.setId((int) id);
+                            currentStudent.postValue(newStudent);
+                        } else {
+                            errorMessage.postValue("Failed to create profile. Please try again.");
+                        }
+                    });
                 }
             });
         }
     }
 
-    public void updateProfile(String fullName, String gpaStr, String location, String email, 
-                              String college, String course, String contactNumber) {
+    private Student createDefaultStudent(String firebaseUid, String email) {
+        Student student = new Student(
+                firebaseUid,
+                "New",          // firstName
+                "User",         // lastName
+                "",             // middleInitial
+                "",             // location
+                0.0             // gpa
+        );
+        student.setEmail(email);
+        student.setCollege("");
+        student.setCourse("");
+        student.setContactNumber("");
+        return student;
+    }
+
+    public void updateProfile(String fullName, String gpaStr, String location, String email,
+                              String college, String course, String contactNumber, String photoPath) {
         Student student = currentStudent.getValue();
         if (student == null) {
-            errorMessage.postValue("Student data not loaded");
-            return;
+            // Try to reload student data asynchronously
+            FirebaseUser firebaseUser = firebaseAuth.getCurrentUser();
+            if (firebaseUser != null) {
+                studentRepository.getStudentByFirebaseUidAsync(firebaseUser.getUid(), loadedStudent -> {
+                    if (loadedStudent != null) {
+                        currentStudent.postValue(loadedStudent);
+                        // Proceed with update using loaded student
+                        performProfileUpdate(loadedStudent, fullName, gpaStr, location, email,
+                                college, course, contactNumber, photoPath);
+                    } else {
+                        errorMessage.postValue("We couldn't load your profile data. Please close the app and try again.");
+                    }
+                });
+                return;
+            } else {
+                errorMessage.postValue("Your session has expired. Please sign in again.");
+                return;
+            }
         }
 
+        // Student already loaded, proceed with update
+        performProfileUpdate(student, fullName, gpaStr, location, email,
+                college, course, contactNumber, photoPath);
+    }
+
+    private void performProfileUpdate(Student student, String fullName, String gpaStr, String location,
+                                      String email, String college, String course, String contactNumber,
+                                      String photoPath) {
         if (fullName.isEmpty() || gpaStr.isEmpty() || location.isEmpty() || email.isEmpty()) {
-            errorMessage.postValue("Please fill in required fields");
+            errorMessage.postValue("Please fill in all required fields (Name, GPA, Location, and Email) to update your profile.");
             return;
         }
 
         try {
             double gpa = Double.parseDouble(gpaStr);
             if (gpa < 0 || gpa > 5.0) {
-                errorMessage.postValue("GPA must be between 0 and 5.0");
+                errorMessage.postValue("Please enter a valid GPA between 0 and 5.0. If you're using a different scale, please convert it.");
                 return;
             }
 
             String[] nameParts = fullName.split(" ", 3);
             if (nameParts.length < 2) {
-                errorMessage.postValue("Please enter a valid full name");
+                errorMessage.postValue("Please enter your full name including both first and last name (e.g., Juan dela Cruz).");
                 return;
             }
 
@@ -113,21 +170,24 @@ public class ProfileViewModel extends AndroidViewModel {
             student.setCollege(college.isEmpty() ? null : college);
             student.setCourse(course.isEmpty() ? null : course);
             student.setContactNumber(contactNumber.isEmpty() ? null : contactNumber);
+            if (photoPath != null) {
+                student.setProfilePhotoPath(photoPath);
+            }
 
             studentRepository.update(student, new UpdateCallback() {
                 @Override
                 public void onUpdateComplete(int rowsAffected) {
                     if (rowsAffected > 0) {
                         updateSuccess.postValue(true);
-                        errorMessage.postValue("Profile updated successfully");
+                        errorMessage.postValue("Your profile has been updated successfully!");
                     } else {
                         updateSuccess.postValue(false);
-                        errorMessage.postValue("Failed to update profile");
+                        errorMessage.postValue("We couldn't save your changes. Please try again or check your connection.");
                     }
                 }
             });
         } catch (NumberFormatException e) {
-            errorMessage.postValue("Please enter a valid GPA");
+            errorMessage.postValue("The GPA you entered doesn't look like a number. Please use a format like 3.5 or 4.0.");
         }
     }
 
@@ -179,5 +239,17 @@ public class ProfileViewModel extends AndroidViewModel {
 
     public void logout() {
         firebaseAuth.signOut();
+    }
+
+    @Override
+    protected void onCleared() {
+        super.onCleared();
+        // Shutdown executors to prevent thread leaks
+        if (locationFlowManager != null) {
+            locationFlowManager.shutdown();
+        }
+        if (studentRepository != null) {
+            studentRepository.shutdown();
+        }
     }
 }

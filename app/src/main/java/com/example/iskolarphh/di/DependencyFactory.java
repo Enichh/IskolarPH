@@ -1,11 +1,15 @@
 package com.example.iskolarphh.di;
 
 import android.content.Context;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
 import com.example.iskolarphh.BuildConfig;
 import com.example.iskolarphh.api.ApiClientConfig;
 import com.example.iskolarphh.api.RetrofitClient;
 import com.example.iskolarphh.repository.ScholarshipRepository;
 import com.example.iskolarphh.repository.StudentRepository;
+import com.example.iskolarphh.repository.PrivacyConsentRepository;
 import com.example.iskolarphh.service.GeocoderService;
 import com.example.iskolarphh.service.LocationFlowManager;
 import com.example.iskolarphh.service.LocationManager;
@@ -32,11 +36,13 @@ public class DependencyFactory {
     // Lazy-loaded dependencies
     private ScholarshipRepository scholarshipRepository;
     private StudentRepository studentRepository;
+    private PrivacyConsentRepository privacyConsentRepository;
     private ScholarshipFilterService scholarshipFilterService;
     private GeocoderService geocoderService;
     private LocationManager locationManager;
     private LocationFlowManager locationFlowManager;
     private RetrofitClient retrofitClient;
+    private ExecutorService executorService;
     
     private DependencyFactory(Context context) {
         this.context = context.getApplicationContext();
@@ -67,7 +73,14 @@ public class DependencyFactory {
         }
         return studentRepository;
     }
-    
+
+    public PrivacyConsentRepository getPrivacyConsentRepository() {
+        if (privacyConsentRepository == null) {
+            privacyConsentRepository = new PrivacyConsentRepository(context);
+        }
+        return privacyConsentRepository;
+    }
+
     // Service dependencies
     public ScholarshipFilterService getScholarshipFilterService() {
         if (scholarshipFilterService == null) {
@@ -102,6 +115,13 @@ public class DependencyFactory {
         return locationFlowManager;
     }
     
+    public ExecutorService getExecutorService() {
+        if (executorService == null) {
+            executorService = Executors.newSingleThreadExecutor();
+        }
+        return executorService;
+    }
+    
     // API dependencies
     public RetrofitClient getRetrofitClient() {
         if (retrofitClient == null) {
@@ -125,32 +145,45 @@ public class DependencyFactory {
     }
     
     public SignupViewModel createSignupViewModel(android.app.Application application) {
-        return new SignupViewModel(application);
+        // Create new repository instances per ViewModel for proper lifecycle management
+        StudentRepository studentRepo = new StudentRepository(context);
+        PrivacyConsentRepository privacyRepo = new PrivacyConsentRepository(context);
+        return new SignupViewModel(application, privacyRepo, studentRepo);
     }
     
     public CatalogViewModel createCatalogViewModel(android.app.Application application) {
+        // Create new repository instances per ViewModel for proper lifecycle management
         return new CatalogViewModel(
             application,
-            getScholarshipRepository(),
-            createFilterViewModel(application),
-            createLocationViewModel(application),
-            createStudentViewModel(application)
+            new ScholarshipRepository(context),
+            new StudentRepository(context),
+            getScholarshipFilterService()  // Stateless, safe to share
         );
     }
     
     public DashboardViewModel createDashboardViewModel(android.app.Application application) {
+        // Create new instances per ViewModel - each manages its own executor lifecycle
         return new DashboardViewModel(
             application,
-            getScholarshipRepository(),
-            getStudentRepository()
+            new ScholarshipRepository(context),
+            new StudentRepository(context),
+            Executors.newSingleThreadExecutor()
         );
     }
     
     public ProfileViewModel createProfileViewModel(android.app.Application application) {
+        // Create new instances per ViewModel for proper executor lifecycle management
+        StudentRepository studentRepo = new StudentRepository(context);
+        LocationFlowManager locationFlow = new LocationFlowManager(
+            context,
+            getLocationManager(),
+            new GeocoderService(),  // New instance per ViewModel
+            studentRepo  // Same repo instance for consistency
+        );
         return new ProfileViewModel(
             application,
-            getStudentRepository(),
-            getLocationFlowManager()
+            studentRepo,
+            locationFlow
         );
     }
     
@@ -159,11 +192,20 @@ public class DependencyFactory {
     }
     
     public LocationViewModel createLocationViewModel(android.app.Application application) {
-        return new LocationViewModel(application, getStudentRepository(), getLocationFlowManager());
+        // Create new instances per ViewModel for proper executor lifecycle management
+        StudentRepository studentRepo = new StudentRepository(context);
+        LocationFlowManager locationFlow = new LocationFlowManager(
+            context,
+            getLocationManager(),
+            new GeocoderService(),
+            studentRepo
+        );
+        return new LocationViewModel(application, studentRepo, locationFlow);
     }
     
     public StudentViewModel createStudentViewModel(android.app.Application application) {
-        return new StudentViewModel(application, getStudentRepository());
+        // Create new repository instance per ViewModel
+        return new StudentViewModel(application, new StudentRepository(context));
     }
     
     /**
@@ -172,10 +214,15 @@ public class DependencyFactory {
     public void reset() {
         scholarshipRepository = null;
         studentRepository = null;
+        privacyConsentRepository = null;
         scholarshipFilterService = null;
         geocoderService = null;
         locationManager = null;
         locationFlowManager = null;
         retrofitClient = null;
+        if (executorService != null && !executorService.isShutdown()) {
+            executorService.shutdown();
+        }
+        executorService = null;
     }
 }

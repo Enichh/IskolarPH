@@ -5,6 +5,8 @@ import android.Manifest;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.os.StrictMode;
 import android.view.MenuItem;
 import androidx.annotation.NonNull;
@@ -21,6 +23,7 @@ import androidx.fragment.app.Fragment;
 import com.example.iskolarphh.ui.CatalogFragment;
 import com.example.iskolarphh.ui.DashboardFragment;
 import com.example.iskolarphh.ui.ProfileFragment;
+import com.example.iskolarphh.ui.SavedFragment;
 import com.example.iskolarphh.ui.LocationPermissionDialog;
 import com.example.iskolarphh.ui.ChatbotDialog;
 import com.example.iskolarphh.service.LocationFlowManager;
@@ -93,13 +96,10 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void initializeLocationManager() {
-        // Lazy initialization to avoid blocking main thread
-        new android.os.Handler().post(() -> {
-            locationFlowManager = new LocationFlowManager(this, 
-                new LocationManager(), 
-                new GeocoderService(), 
-                new StudentRepository(this));
-        });
+        locationFlowManager = new LocationFlowManager(this, 
+            new LocationManager(), 
+            new GeocoderService(), 
+            new StudentRepository(this));
     }
 
     private void handleInitialNavigation() {
@@ -172,6 +172,9 @@ public class MainActivity extends AppCompatActivity {
 
             if (id == R.id.nav_home) {
                 selectedFragment = new DashboardFragment();
+
+            } else if (id == R.id.nav_saved) {
+                selectedFragment = new SavedFragment();
 
             } else if (id == R.id.nav_search) {
                 selectedFragment = new CatalogFragment();

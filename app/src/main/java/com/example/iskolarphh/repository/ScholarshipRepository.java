@@ -23,6 +23,7 @@ public class ScholarshipRepository {
     private final ScholarshipDao scholarshipDao;
     private final ExecutorService executorService;
     private final ScholarshipFilterService filterService;
+    private volatile boolean isShutdown = false;
 
     public ScholarshipRepository(Context context) {
         AppDatabase database = AppDatabase.getInstance(context);
@@ -105,6 +106,17 @@ public class ScholarshipRepository {
     }
 
     public void delete(Scholarship scholarship) {
+        if (isShutdown) return;
         executorService.execute(() -> scholarshipDao.delete(scholarship));
+    }
+
+    /**
+     * Shutdown the executor service. Call this when the repository is no longer needed.
+     */
+    public void shutdown() {
+        isShutdown = true;
+        if (executorService != null && !executorService.isShutdown()) {
+            executorService.shutdown();
+        }
     }
 }

@@ -7,16 +7,18 @@ import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.util.Log;
 import android.view.View;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.widget.Button;
 import android.widget.ProgressBar;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.iskolarphh.service.SupabaseVerificationService;
+import com.example.iskolarphh.ui.DialogManager;
 import com.example.iskolarphh.utils.NetworkUtils;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
@@ -28,8 +30,12 @@ public class EmailVerificationActivity extends AppCompatActivity {
     private static final String TAG = "EmailVerification";
     private static final String PREFS_NAME = "EmailVerificationPrefs";
     private static final String KEY_VERIFIED_EMAILS = "verified_emails";
+    private static final String KEY_LOGIN_SESSION = "login_session";
+    private static final String KEY_SESSION_EMAIL = "session_email";
+    private static final String KEY_SESSION_TIMESTAMP = "session_timestamp";
     private static final long RESEND_COOLDOWN_MS = 60000; // 60 seconds cooldown
     private static final int CODE_EXPIRY_SECONDS = 300; // 5 minutes
+    private static final long SESSION_DURATION_MS = 24 * 60 * 60 * 1000; // 24 hours
 
     private FirebaseAuth mAuth;
     private SupabaseVerificationService verificationService;
@@ -42,14 +48,10 @@ public class EmailVerificationActivity extends AppCompatActivity {
     private TextInputLayout tilCode;
     private TextInputEditText etCode;
     private Button btnResend;
-    private Button btnVerifyCode;
-    private Button btnContinue;
-    private Button btnLogout;
     private ProgressBar progressBar;
 
     private CountDownTimer countDownTimer;
     private CountDownTimer codeExpiryTimer;
-    private OnBackPressedCallback backPressedCallback;
     private boolean isCodeSent = false;
     private String currentEmail;
     private String verificationType = "registration";
@@ -76,6 +78,13 @@ public class EmailVerificationActivity extends AppCompatActivity {
         currentEmail = user.getEmail();
         tvEmail.setText(currentEmail);
 
+        // Check if user has a valid cached session (for login type)
+        if ("login".equals(verificationType) && hasValidCachedSession(currentEmail)) {
+            Log.d(TAG, "User has valid cached session, navigating to main");
+            navigateToMain();
+            return;
+        }
+        
         // Check if already verified via Supabase
         if (isEmailVerifiedInSupabase(currentEmail)) {
             navigateToMain();
@@ -90,21 +99,67 @@ public class EmailVerificationActivity extends AppCompatActivity {
 
         // Setup button click listeners
         btnResend.setOnClickListener(v -> sendVerificationCode());
-        btnVerifyCode.setOnClickListener(v -> verifyCode());
-        btnContinue.setOnClickListener(v -> attemptContinue());
-        btnLogout.setOnClickListener(v -> logout());
-
-        // Handle back press
-        backPressedCallback = new OnBackPressedCallback(true) {
+        
+        // Setup auto-verification when code is entered
+        etCode.addTextChangedListener(new TextWatcher() {
             @Override
-            public void handleOnBackPressed() {
-                Toast.makeText(EmailVerificationActivity.this, "Please verify your email or logout", Toast.LENGTH_SHORT).show();
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {}
+            
+            @Override
+            public void afterTextChanged(Editable s) {
+                String code = s.toString().trim();
+                if (code.length() == 6) {
+                    // Auto-verify when 6 digits are entered
+                    verifyCode();
+                }
             }
-        };
-        getOnBackPressedDispatcher().addCallback(this, backPressedCallback);
+        });
 
-        // Auto-send verification code on load
+
+        // Auto-send verification code on load (only if not already cached)
         sendVerificationCode();
+    }
+    
+    private boolean hasValidCachedSession(String email) {
+        if (email == null) return false;
+        
+        boolean hasSession = prefs.getBoolean(KEY_LOGIN_SESSION, false);
+        String sessionEmail = prefs.getString(KEY_SESSION_EMAIL, "");
+        long sessionTimestamp = prefs.getLong(KEY_SESSION_TIMESTAMP, 0);
+        
+        long currentTime = System.currentTimeMillis();
+        
+        // Check if session is expired
+        if (hasSession && (currentTime - sessionTimestamp) >= SESSION_DURATION_MS) {
+            Log.d(TAG, "Session expired, clearing cache");
+            clearCachedSession();
+            return false;
+        }
+        
+        return hasSession && 
+               email.equals(sessionEmail) && 
+               (currentTime - sessionTimestamp) < SESSION_DURATION_MS;
+    }
+    
+    private void clearCachedSession() {
+        SharedPreferences.Editor editor = prefs.edit();
+        editor.remove(KEY_LOGIN_SESSION);
+        editor.remove(KEY_SESSION_EMAIL);
+        editor.remove(KEY_SESSION_TIMESTAMP);
+        editor.apply();
+        Log.d(TAG, "Cached login session cleared due to expiry");
+    }
+    
+    private void cacheLoginSession(String email) {
+        SharedPreferences.Editor editor = prefs.edit();
+        editor.putBoolean(KEY_LOGIN_SESSION, true);
+        editor.putString(KEY_SESSION_EMAIL, email);
+        editor.putLong(KEY_SESSION_TIMESTAMP, System.currentTimeMillis());
+        editor.apply();
+        Log.d(TAG, "Login session cached for email: " + email);
     }
 
     private void initViews() {
@@ -115,9 +170,6 @@ public class EmailVerificationActivity extends AppCompatActivity {
         tilCode = findViewById(R.id.tilCode);
         etCode = findViewById(R.id.etCode);
         btnResend = findViewById(R.id.btnResend);
-        btnVerifyCode = findViewById(R.id.btnVerifyCode);
-        btnContinue = findViewById(R.id.btnContinue);
-        btnLogout = findViewById(R.id.btnLogout);
         progressBar = findViewById(R.id.progressBar);
     }
 
@@ -167,14 +219,13 @@ public class EmailVerificationActivity extends AppCompatActivity {
                         EmailVerificationActivity.this.runOnUiThread(() -> {
                             showLoading(false);
                             isCodeSent = true;
-                            Toast.makeText(EmailVerificationActivity.this,
-                                    "Verification code sent! Check your email.",
-                                    Toast.LENGTH_LONG).show();
+                            DialogManager.showSuccessDialog(EmailVerificationActivity.this,
+                                    "Code Sent",
+                                    "We've sent a verification code to your email. Please check your inbox and spam folder.");
                             startResendCooldown();
                             startCodeExpiryTimer(expiresIn);
                             tvMessage.setText("Enter the 6-digit code sent to your email");
                             tilCode.setVisibility(View.VISIBLE);
-                            btnVerifyCode.setVisibility(View.VISIBLE);
                         });
                     }
 
@@ -184,9 +235,9 @@ public class EmailVerificationActivity extends AppCompatActivity {
                             showLoading(false);
                             btnResend.setEnabled(true);
                             Log.e(TAG, "Failed to send code: " + error);
-                            Toast.makeText(EmailVerificationActivity.this,
-                                    "Failed to send code: " + error,
-                                    Toast.LENGTH_LONG).show();
+                            DialogManager.showErrorDialog(EmailVerificationActivity.this,
+                                    "Couldn't Send Code",
+                                    "We couldn't send the verification code. " + error + "\n\nPlease try again or check your internet connection.");
                         });
                     }
                 });
@@ -206,7 +257,6 @@ public class EmailVerificationActivity extends AppCompatActivity {
 
         tilCode.setError(null);
         showLoading(true);
-        btnVerifyCode.setEnabled(false);
 
         verificationService.verifyCode(currentEmail, code, verificationType,
                 new SupabaseVerificationService.VerifyCodeCallback() {
@@ -215,14 +265,28 @@ public class EmailVerificationActivity extends AppCompatActivity {
                         EmailVerificationActivity.this.runOnUiThread(() -> {
                             showLoading(false);
                             markEmailAsVerified(currentEmail);
+                            
+                            // Cache login session for login type
+                            if ("login".equals(verificationType)) {
+                                cacheLoginSession(currentEmail);
+                            }
+                            
                             updateVerificationStatus(true);
                             
-                            String successMsg = "registration".equals(verificationType) 
-                                    ? "Email verified successfully!" 
-                                    : "Code verified! Login complete.";
-                            Toast.makeText(EmailVerificationActivity.this,
-                                    successMsg,
-                                    Toast.LENGTH_SHORT).show();
+                            String successTitle = "registration".equals(verificationType)
+                                    ? "Email Verified!"
+                                    : "Login Complete!";
+                            String successMsg = "registration".equals(verificationType)
+                                    ? "Your email has been successfully verified. Welcome to IskolarPH!"
+                                    : "Your code is verified and you're now signed in. Welcome back!";
+                            DialogManager.showSuccessDialog(EmailVerificationActivity.this,
+                                    successTitle,
+                                    successMsg);
+
+                            // Auto-navigate to main app after successful verification
+                            new android.os.Handler().postDelayed(() -> {
+                                navigateToMain();
+                            }, 1500); // 1.5 second delay to show success message
 
                             // Cancel expiry timer
                             if (codeExpiryTimer != null) {
@@ -235,7 +299,6 @@ public class EmailVerificationActivity extends AppCompatActivity {
                     public void onError(String error, int attemptsRemaining) {
                         EmailVerificationActivity.this.runOnUiThread(() -> {
                             showLoading(false);
-                            btnVerifyCode.setEnabled(true);
 
                             if (attemptsRemaining > 0) {
                                 tilCode.setError(error + " (" + attemptsRemaining + " attempts remaining)");
@@ -244,7 +307,9 @@ public class EmailVerificationActivity extends AppCompatActivity {
                                 etCode.setText("");
                             }
 
-                            Toast.makeText(EmailVerificationActivity.this, error, Toast.LENGTH_LONG).show();
+                            DialogManager.showErrorDialog(EmailVerificationActivity.this,
+                                    "Verification Failed",
+                                    error + "\n\nPlease check the code and try again, or request a new code if it has expired.");
                         });
                     }
                 });
@@ -268,9 +333,9 @@ public class EmailVerificationActivity extends AppCompatActivity {
                         EmailVerificationActivity.this.runOnUiThread(() -> {
                             showLoading(false);
                             isCodeSent = true;
-                            Toast.makeText(EmailVerificationActivity.this,
-                                    "New code sent! Check your email.",
-                                    Toast.LENGTH_LONG).show();
+                            DialogManager.showSuccessDialog(EmailVerificationActivity.this,
+                                    "New Code Sent",
+                                    "A new verification code has been sent to your email.");
                             startResendCooldown();
 
                             // Reset expiry timer
@@ -289,9 +354,9 @@ public class EmailVerificationActivity extends AppCompatActivity {
                         EmailVerificationActivity.this.runOnUiThread(() -> {
                             showLoading(false);
                             btnResend.setEnabled(true);
-                            Toast.makeText(EmailVerificationActivity.this,
-                                    "Failed to resend: " + error,
-                                    Toast.LENGTH_LONG).show();
+                            DialogManager.showErrorDialog(EmailVerificationActivity.this,
+                                    "Couldn't Resend Code",
+                                    "We couldn't resend the code. " + error + "\n\nPlease wait a moment and try again.");
                         });
                     }
                 });
@@ -304,42 +369,21 @@ public class EmailVerificationActivity extends AppCompatActivity {
         if (isVerified) {
             tvStatus.setText("Status: Verified");
             tvStatus.setTextColor(getColor(android.R.color.holo_green_dark));
-            btnContinue.setEnabled(true);
-            btnContinue.setAlpha(1.0f);
             
             String message = "registration".equals(verificationType)
-                    ? "Your email is verified! Click continue to proceed."
-                    : "Verification complete! Click continue to access the app.";
+                    ? "Your email is verified! Redirecting to app..."
+                    : "Verification complete! Redirecting to app...";
             tvMessage.setText(message);
             
             tilCode.setVisibility(View.GONE);
-            btnVerifyCode.setVisibility(View.GONE);
             btnResend.setVisibility(View.GONE);
             tvTimer.setVisibility(View.GONE);
         } else {
             tvStatus.setText("Status: Not Verified");
             tvStatus.setTextColor(getColor(android.R.color.holo_red_dark));
-            btnContinue.setEnabled(false);
-            btnContinue.setAlpha(0.5f);
         }
     }
 
-    /**
-     * Attempt to continue to main app
-     */
-    private void attemptContinue() {
-        // For registration, check persistent verification
-        if ("registration".equals(verificationType)) {
-            if (isEmailVerifiedInSupabase(currentEmail)) {
-                navigateToMain();
-            } else {
-                Toast.makeText(this, "Please verify your email first", Toast.LENGTH_LONG).show();
-            }
-        } else {
-            // For login (2FA), if we reached this point, verification was successful
-            navigateToMain();
-        }
-    }
 
     /**
      * Start cooldown timer for resend button
@@ -382,13 +426,6 @@ public class EmailVerificationActivity extends AppCompatActivity {
         }.start();
     }
 
-    /**
-     * Logout user and return to login
-     */
-    private void logout() {
-        mAuth.signOut();
-        navigateToLogin();
-    }
 
     private void navigateToLogin() {
         Intent intent = new Intent(EmailVerificationActivity.this, LoginActivity.class);
@@ -416,9 +453,6 @@ public class EmailVerificationActivity extends AppCompatActivity {
         }
         if (codeExpiryTimer != null) {
             codeExpiryTimer.cancel();
-        }
-        if (backPressedCallback != null) {
-            backPressedCallback.remove();
         }
     }
 }

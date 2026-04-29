@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Dimensions for phablets (sw480dp) -->
+    
+    <!-- Margins - larger for phablet screens -->
+    <dimen name="margin_extra_small">6dp</dimen>
+    <dimen name="margin_small">12dp</dimen>
+    <dimen name="margin_medium">20dp</dimen>
+    <dimen name="margin_large">28dp</dimen>
+    <dimen name="margin_extra_large">40dp</dimen>
+    
+    <!-- Padding - larger for phablet screens -->
+    <dimen name="padding_small">10dp</dimen>
+    <dimen name="padding_medium">16dp</dimen>
+    <dimen name="padding_large">20dp</dimen>
+    <dimen name="padding_extra_large">28dp</dimen>
+    
+    <!-- Text sizes - larger for phablet screens -->
+    <dimen name="text_size_extra_small">14sp</dimen>
+    <dimen name="text_size_small">16sp</dimen>
+    <dimen name="text_size_medium">18sp</dimen>
+    <dimen name="text_size_large">20sp</dimen>
+    <dimen name="text_size_extra_large">22sp</dimen>
+    <dimen name="text_size_title">28sp</dimen>
+    <dimen name="text_size_header">36sp</dimen>
+    
+    <!-- Component sizes -->
+    <dimen name="header_height">60dp</dimen>
+    <dimen name="card_corner_radius">14dp</dimen>
+    <dimen name="button_height">60dp</dimen>
+    <dimen name="icon_size_small">28dp</dimen>
+    <dimen name="icon_size_medium">36dp</dimen>
+    <dimen name="icon_size_large">44dp</dimen>
+    <dimen name="logo_size">110dp</dimen>
+    
+    <!-- Card heights -->
+    <dimen name="dashboard_card_height">150dp</dimen>
+    
+    <!-- Elevation -->
+    <dimen name="elevation_small">3dp</dimen>
+    <dimen name="elevation_medium">5dp</dimen>
+    <dimen name="elevation_large">10dp</dimen>
+</resources>

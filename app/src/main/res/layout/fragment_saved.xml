@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/rootLayout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#001F3F"
+    android:fitsSystemWindows="true">
+
+    <!-- HEADER -->
+    <RelativeLayout
+        android:id="@+id/headerLayout"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/header_height"
+        android:background="#001F3F"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <!-- Centered Logo and Text -->
+        <LinearLayout
+            android:layout_width="217dp"
+            android:layout_height="40dp"
+            android:layout_centerInParent="true"
+            android:gravity="center"
+            android:orientation="horizontal">
+
+            <ImageView
+                android:id="@+id/ivLogo"
+                android:layout_width="47dp"
+                android:layout_height="47dp"
+                android:layout_marginEnd="@dimen/margin_small"
+                android:src="@drawable/logo_iskolar_ph" />
+
+            <TextView
+                android:id="@+id/tvHeaderName"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="ISKOLAR PH"
+                android:textColor="#FFFFFF"
+                android:textSize="@dimen/text_size_title"
+                android:textStyle="bold" />
+        </LinearLayout>
+    </RelativeLayout>
+
+    <!-- Header Underline -->
+    <View
+        android:id="@+id/headerUnderline"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/margin_extra_small"
+        android:layout_marginTop="@dimen/margin_small"
+        android:background="#D4A017"
+        app:layout_constraintTop_toBottomOf="@id/headerLayout" />
+
+    <!-- Title -->
+    <TextView
+        android:id="@+id/tvTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Saved Scholarships"
+        android:textColor="#FFFFFF"
+        android:textSize="@dimen/text_size_large"
+        android:textStyle="bold"
+        android:layout_marginTop="@dimen/margin_medium"
+        android:layout_marginStart="@dimen/padding_medium"
+        app:layout_constraintTop_toBottomOf="@id/headerUnderline"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <!-- RecyclerView for Saved Scholarships -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerViewSaved"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginTop="@dimen/margin_medium"
+        android:clipToPadding="false"
+        android:paddingHorizontal="@dimen/padding_medium"
+        android:paddingBottom="80dp"
+        app:layout_constraintTop_toBottomOf="@id/tvTitle"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- Empty State View -->
+    <TextView
+        android:id="@+id/tvEmptyState"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="No saved scholarships yet.\nTap the bookmark icon on any scholarship to save it."
+        android:textColor="#FFFFFF"
+        android:textSize="@dimen/text_size_medium"
+        android:textAlignment="center"
+        android:visibility="gone"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

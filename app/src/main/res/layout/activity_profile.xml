@@ -5,83 +5,73 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#001F3F"
+    android:fitsSystemWindows="true"
     tools:context=".MainActivity">
-
-    <!-- Header Section -->
-    <androidx.constraintlayout.widget.ConstraintLayout
-        android:id="@+id/headerLayout"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:paddingTop="8dp"
-        android:paddingStart="16dp"
-        android:paddingEnd="16dp"
-        android:paddingBottom="16dp"
-        app:layout_constraintTop_toTopOf="parent">
-
-        <LinearLayout
-            android:id="@+id/logoContainer"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:gravity="center"
-            android:orientation="horizontal"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent">
-
-            <ImageView
-                android:id="@+id/ivLogo"
-                android:layout_width="32dp"
-                android:layout_height="32dp"
-                android:layout_marginEnd="8dp"
-                android:scaleType="centerCrop"
-                android:src="@drawable/logo_iskolar_ph" />
-
-            <TextView
-                android:id="@+id/tvHeaderName"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="IskolarPH"
-                android:textColor="@android:color/white"
-                android:textSize="18sp"
-                android:textStyle="bold" />
-        </LinearLayout>
-
-        <ImageButton
-            android:id="@+id/btnEditToggle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:src="@android:drawable/ic_menu_edit"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            app:tint="@android:color/white" />
-
-    </androidx.constraintlayout.widget.ConstraintLayout>
 
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:paddingBottom="106dp"
+        android:fillViewport="true"
         android:clipToPadding="false"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/headerLayout">
+        app:layout_constraintTop_toTopOf="parent">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:paddingBottom="24dp">
+            android:orientation="vertical">
+
+            <!-- HEADER -->
+            <RelativeLayout
+                android:id="@+id/headerLayout"
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/header_height"
+                android:background="#001F3F">
+
+                <!-- Centered Logo and Text -->
+                <LinearLayout
+                    android:layout_width="217dp"
+                    android:layout_height="40dp"
+                    android:layout_centerInParent="true"
+                    android:gravity="center"
+                    android:orientation="horizontal">
+
+                    <ImageView
+                        android:id="@+id/ivLogo"
+                        android:layout_width="47dp"
+                        android:layout_height="47dp"
+                        android:layout_marginEnd="@dimen/margin_small"
+                        android:src="@drawable/logo_iskolar_ph" />
+
+                    <TextView
+                        android:id="@+id/tvHeaderName"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="ISKOLAR PH"
+                        android:textColor="#FFFFFF"
+                        android:textSize="@dimen/text_size_title"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+
+            </RelativeLayout>
+
+            <!-- Header Underline -->
+            <View
+                android:id="@+id/headerUnderline"
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/margin_extra_small"
+                android:layout_marginTop="@dimen/margin_small"
+                android:background="#D4A017" />
 
             <!-- Single Combined Card -->
             <androidx.cardview.widget.CardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_margin="16dp"
+                android:layout_margin="@dimen/margin_large"
                 app:cardBackgroundColor="#F5F5F5"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="4dp">
+                app:cardCornerRadius="@dimen/card_corner_radius"
+                app:cardElevation="@dimen/elevation_medium">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -92,53 +82,73 @@
                     <androidx.constraintlayout.widget.ConstraintLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:paddingBottom="16dp">
+                        android:paddingBottom="@dimen/padding_large">
 
                         <View
                             android:id="@+id/bannerBackground"
                             android:layout_width="match_parent"
-                            android:layout_height="10dp"
+                            android:layout_height="@dimen/margin_extra_small"
                             android:background="#154284"
                             app:layout_constraintTop_toTopOf="parent" />
 
                         <!-- Profile Image with Change Button -->
                         <FrameLayout
                             android:id="@+id/profileImageContainer"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="20dp"
-                            android:layout_marginTop="20dp"
+                            android:layout_width="@dimen/icon_size_large"
+                            android:layout_height="@dimen/icon_size_large"
+                            android:layout_marginStart="@dimen/padding_large"
+                            android:layout_marginTop="@dimen/padding_large"
                             app:layout_constraintStart_toStartOf="parent"
                             app:layout_constraintTop_toTopOf="parent">
 
-                            <ImageView
-                                android:id="@+id/ivProfilePicture"
-                                android:layout_width="90dp"
-                                android:layout_height="90dp"
-                                android:background="#FFD700"
-                                android:padding="4dp"
-                                android:scaleType="centerCrop"
-                                android:src="@android:drawable/ic_menu_gallery" />
+                            <!-- Circular Profile Image Container -->
+                            <androidx.cardview.widget.CardView
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                app:cardCornerRadius="80dp"
+                                app:cardElevation="0dp"
+                                app:cardPreventCornerOverlap="true"
+                                app:cardUseCompatPadding="false">
 
-                            <ImageView
-                                android:id="@+id/btnChangePhoto"
-                                android:layout_width="32dp"
-                                android:layout_height="32dp"
+                                <ImageView
+                                    android:id="@+id/ivProfilePicture"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="match_parent"
+                                    android:background="#FFD700"
+                                    android:padding="2dp"
+                                    android:scaleType="centerCrop"
+                                    android:src="@android:drawable/ic_menu_gallery" />
+                            </androidx.cardview.widget.CardView>
+
+                            <!-- Camera Icon Button -->
+                            <androidx.cardview.widget.CardView
+                                android:layout_width="36dp"
+                                android:layout_height="36dp"
                                 android:layout_gravity="bottom|end"
-                                android:background="@android:color/white"
-                                android:elevation="4dp"
-                                android:padding="6dp"
-                                android:src="@android:drawable/ic_menu_camera" />
+                                android:layout_marginEnd="4dp"
+                                android:layout_marginBottom="4dp"
+                                app:cardCornerRadius="18dp"
+                                app:cardElevation="4dp"
+                                app:cardBackgroundColor="#FFFFFF">
+
+                                <ImageView
+                                    android:id="@+id/btnChangePhoto"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="match_parent"
+                                    android:padding="8dp"
+                                    android:src="@android:drawable/ic_menu_camera"
+                                    app:tint="#154284" />
+                            </androidx.cardview.widget.CardView>
                         </FrameLayout>
 
                         <TextView
                             android:id="@+id/tvProfileName"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="8dp"
+                            android:layout_marginTop="@dimen/margin_small"
                             android:text="Your Name"
                             android:textColor="#212121"
-                            android:textSize="20sp"
+                            android:textSize="@dimen/text_size_large"
                             android:textStyle="bold"
                             app:layout_constraintStart_toStartOf="@id/profileImageContainer"
                             app:layout_constraintTop_toBottomOf="@id/profileImageContainer" />
@@ -147,13 +157,13 @@
                             android:id="@+id/tvRole"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="4dp"
+                            android:layout_marginTop="@dimen/margin_extra_small"
                             android:background="#E0E0E0"
-                            android:paddingHorizontal="10dp"
-                            android:paddingVertical="2dp"
+                            android:paddingHorizontal="@dimen/margin_small"
+                            android:paddingVertical="@dimen/margin_extra_small"
                             android:text="Student"
                             android:textColor="#757575"
-                            android:textSize="12sp"
+                            android:textSize="@dimen/text_size_extra_small"
                             android:textStyle="bold"
                             app:layout_constraintStart_toStartOf="@id/tvProfileName"
                             app:layout_constraintTop_toBottomOf="@id/tvProfileName" />
@@ -162,10 +172,10 @@
                             android:id="@+id/tvCourseDisplay"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="12dp"
+                            android:layout_marginTop="@dimen/margin_medium"
                             android:text="Course / Program"
                             android:textColor="#3282C4"
-                            android:textSize="14sp"
+                            android:textSize="@dimen/text_size_small"
                             android:textStyle="bold"
                             app:layout_constraintStart_toStartOf="@id/tvProfileName"
                             app:layout_constraintTop_toBottomOf="@id/tvRole" />
@@ -176,7 +186,7 @@
                             android:layout_height="wrap_content"
                             android:text="GPA: 0.0"
                             android:textColor="#212121"
-                            android:textSize="14sp"
+                            android:textSize="@dimen/text_size_small"
                             android:textStyle="bold"
                             app:layout_constraintStart_toStartOf="@id/tvProfileName"
                             app:layout_constraintTop_toBottomOf="@id/tvCourseDisplay" />
@@ -187,7 +197,7 @@
                             android:layout_height="wrap_content"
                             android:text="School / University"
                             android:textColor="#212121"
-                            android:textSize="14sp"
+                            android:textSize="@dimen/text_size_small"
                             android:textStyle="bold"
                             app:layout_constraintStart_toStartOf="@id/tvProfileName"
                             app:layout_constraintTop_toBottomOf="@id/tvGPADisplay" />
@@ -198,7 +208,7 @@
                             android:layout_height="wrap_content"
                             android:text="Location"
                             android:textColor="#212121"
-                            android:textSize="12sp"
+                            android:textSize="@dimen/text_size_extra_small"
                             android:textStyle="bold"
                             app:layout_constraintStart_toStartOf="@id/tvProfileName"
                             app:layout_constraintTop_toBottomOf="@id/tvCollegeDisplay" />
@@ -209,7 +219,7 @@
                             android:layout_height="wrap_content"
                             android:text="Contact Number"
                             android:textColor="#212121"
-                            android:textSize="12sp"
+                            android:textSize="@dimen/text_size_extra_small"
                             android:textStyle="bold"
                             app:layout_constraintStart_toStartOf="@id/tvProfileName"
                             app:layout_constraintTop_toBottomOf="@id/tvLocationDisplay" />
@@ -220,7 +230,7 @@
                             android:layout_height="wrap_content"
                             android:text="Email Address"
                             android:textColor="#212121"
-                            android:textSize="12sp"
+                            android:textSize="@dimen/text_size_extra_small"
                             android:textStyle="bold"
                             app:layout_constraintStart_toStartOf="@id/tvProfileName"
                             app:layout_constraintTop_toBottomOf="@id/tvContactDisplay" />
@@ -233,12 +243,12 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="vertical"
-                        android:padding="16dp">
+                        android:padding="@dimen/padding_large">
 
                         <View
                             android:layout_width="match_parent"
                             android:layout_height="1dp"
-                            android:layout_marginBottom="16dp"
+                            android:layout_marginBottom="@dimen/margin_medium"
                             android:background="#BDBDBD" />
 
                         <TextView
@@ -246,16 +256,16 @@
                             android:layout_height="wrap_content"
                             android:text="Setup Your Profile"
                             android:textColor="#212121"
-                            android:textSize="16sp"
+                            android:textSize="@dimen/text_size_medium"
                             android:textStyle="bold" />
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="12dp"
+                            android:layout_marginTop="@dimen/margin_medium"
                             android:text="Full Name"
                             android:textColor="#212121"
-                            android:textSize="12sp"
+                            android:textSize="@dimen/text_size_extra_small"
                             android:textStyle="bold" />
                         <EditText
                             android:id="@+id/etFullName"
@@ -266,17 +276,17 @@
                             android:textColor="#212121"
                             android:textColorHint="#757575"
                             android:inputType="textPersonName"
-                            android:padding="8dp"
-                            android:textSize="14sp"
+                            android:padding="@dimen/margin_small"
+                            android:textSize="@dimen/text_size_small"
                             android:textStyle="bold" />
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="12dp"
+                            android:layout_marginTop="@dimen/margin_medium"
                             android:text="Current School / University"
                             android:textColor="#212121"
-                            android:textSize="12sp"
+                            android:textSize="@dimen/text_size_extra_small"
                             android:textStyle="bold" />
                         <EditText
                             android:id="@+id/etCollege"
@@ -286,17 +296,17 @@
                             android:hint="Enter your school name"
                             android:textColor="#212121"
                             android:textColorHint="#757575"
-                            android:padding="8dp"
-                            android:textSize="14sp"
+                            android:padding="@dimen/margin_small"
+                            android:textSize="@dimen/text_size_small"
                             android:textStyle="bold" />
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="12dp"
+                            android:layout_marginTop="@dimen/margin_medium"
                             android:text="Course / Program"
                             android:textColor="#212121"
-                            android:textSize="12sp"
+                            android:textSize="@dimen/text_size_extra_small"
                             android:textStyle="bold" />
                         <EditText
                             android:id="@+id/etCourse"
@@ -306,17 +316,17 @@
                             android:hint="Enter your course"
                             android:textColor="#212121"
                             android:textColorHint="#757575"
-                            android:padding="8dp"
-                            android:textSize="14sp"
+                            android:padding="@dimen/margin_small"
+                            android:textSize="@dimen/text_size_small"
                             android:textStyle="bold" />
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="12dp"
+                            android:layout_marginTop="@dimen/margin_medium"
                             android:text="GPA / GWA"
                             android:textColor="#212121"
-                            android:textSize="12sp"
+                            android:textSize="@dimen/text_size_extra_small"
                             android:textStyle="bold" />
                         <EditText
                             android:id="@+id/etGPA"
@@ -327,17 +337,17 @@
                             android:textColor="#212121"
                             android:textColorHint="#757575"
                             android:inputType="numberDecimal"
-                            android:padding="8dp"
-                            android:textSize="14sp"
+                            android:padding="@dimen/margin_small"
+                            android:textSize="@dimen/text_size_small"
                             android:textStyle="bold" />
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="12dp"
+                            android:layout_marginTop="@dimen/margin_medium"
                             android:text="Contact Number"
                             android:textColor="#212121"
-                            android:textSize="12sp"
+                            android:textSize="@dimen/text_size_extra_small"
                             android:textStyle="bold" />
                         <EditText
                             android:id="@+id/etContactNumber"
@@ -348,17 +358,17 @@
                             android:textColor="#212121"
                             android:textColorHint="#757575"
                             android:inputType="phone"
-                            android:padding="8dp"
-                            android:textSize="14sp"
+                            android:padding="@dimen/margin_small"
+                            android:textSize="@dimen/text_size_small"
                             android:textStyle="bold" />
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="12dp"
+                            android:layout_marginTop="@dimen/margin_medium"
                             android:text="Email Address"
                             android:textColor="#212121"
-                            android:textSize="12sp"
+                            android:textSize="@dimen/text_size_extra_small"
                             android:textStyle="bold" />
                         <EditText
                             android:id="@+id/etEmail"
@@ -369,17 +379,17 @@
                             android:textColor="#212121"
                             android:textColorHint="#757575"
                             android:inputType="textEmailAddress"
-                            android:padding="8dp"
-                            android:textSize="14sp"
+                            android:padding="@dimen/margin_small"
+                            android:textSize="@dimen/text_size_small"
                             android:textStyle="bold" />
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="12dp"
+                            android:layout_marginTop="@dimen/margin_medium"
                             android:text="Location"
                             android:textColor="#212121"
-                            android:textSize="12sp"
+                            android:textSize="@dimen/text_size_extra_small"
                             android:textStyle="bold" />
                         <LinearLayout
                             android:layout_width="match_parent"
@@ -394,24 +404,24 @@
                                 android:hint="City, Country"
                                 android:textColor="#212121"
                                 android:textColorHint="#757575"
-                                android:padding="8dp"
-                                android:textSize="14sp"
+                                android:padding="@dimen/margin_small"
+                                android:textSize="@dimen/text_size_small"
                                 android:textStyle="bold" />
                             <ImageButton
                                 android:id="@+id/btnUseCurrentLocation"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:layout_marginStart="8dp"
+                                android:layout_marginStart="@dimen/margin_small"
                                 android:background="?attr/selectableItemBackgroundBorderless"
-                                android:padding="8dp"
+                                android:padding="@dimen/margin_small"
                                 android:src="@android:drawable/ic_menu_mylocation"
                                 app:tint="#154284" />
                             <ProgressBar
                                 android:id="@+id/progressBarLocation"
-                                android:layout_width="24dp"
-                                android:layout_height="24dp"
+                                android:layout_width="@dimen/icon_size_medium"
+                                android:layout_height="@dimen/icon_size_medium"
                                 android:layout_gravity="center_vertical"
-                                android:layout_marginStart="8dp"
+                                android:layout_marginStart="@dimen/margin_small"
                                 android:visibility="gone" />
                         </LinearLayout>
 
@@ -419,16 +429,16 @@
                             android:id="@+id/btnUpdate"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="16dp"
+                            android:layout_marginTop="@dimen/margin_large"
                             android:backgroundTint="#FFD700"
-                            android:text="Save Profile"
+                            android:text="Edit Profile"
                             android:textColor="#154284"
                             android:textStyle="bold" />
 
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="16dp"
+                            android:layout_marginTop="@dimen/margin_large"
                             android:orientation="horizontal"
                             android:gravity="center">
 
@@ -437,7 +447,7 @@
                                 android:layout_width="0dp"
                                 android:layout_height="wrap_content"
                                 android:layout_weight="1"
-                                android:layout_marginEnd="8dp"
+                                android:layout_marginEnd="@dimen/margin_small"
                                 android:backgroundTint="#154284"
                                 android:text="Toggle Theme"
                                 android:textColor="@android:color/white"
@@ -457,6 +467,11 @@
                     </LinearLayout>
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
+
+            <!-- Bottom padding for keyboard -->
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/padding_large" />
         </LinearLayout>
     </ScrollView>
 </androidx.constraintlayout.widget.ConstraintLayout>

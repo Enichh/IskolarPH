@@ -1,16 +1,18 @@
 package com.example.iskolarphh;
 
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.TextView;
-import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.ViewModelProvider;
 import com.google.android.material.textfield.TextInputEditText;
 import com.example.iskolarphh.di.ViewModelFactory;
+import com.example.iskolarphh.ui.DialogManager;
 import com.example.iskolarphh.viewmodel.SignupViewModel;
 
 public class SignupActivity extends AppCompatActivity {
@@ -20,6 +22,9 @@ public class SignupActivity extends AppCompatActivity {
     private TextInputEditText etEmail;
     private TextInputEditText etPassword;
     private TextInputEditText etConfirmPassword;
+    private CheckBox cbBasicConsent;
+    private CheckBox cbLocationConsent;
+    private TextView tvConsentWarning;
     private Button btnSignup;
     private TextView tvLoginLink;
 
@@ -35,9 +40,13 @@ public class SignupActivity extends AppCompatActivity {
         etEmail = findViewById(R.id.etEmail);
         etPassword = findViewById(R.id.etPassword);
         etConfirmPassword = findViewById(R.id.etConfirmPassword);
+        cbBasicConsent = findViewById(R.id.cbBasicConsent);
+        cbLocationConsent = findViewById(R.id.cbLocationConsent);
+        tvConsentWarning = findViewById(R.id.tvConsentWarning);
         btnSignup = findViewById(R.id.btnSignup);
         tvLoginLink = findViewById(R.id.tvLoginLink);
 
+        setupConsentCheckboxes();
         btnSignup.setOnClickListener(v -> attemptSignup());
         tvLoginLink.setOnClickListener(v -> {
             Intent intent = new Intent(SignupActivity.this, LoginActivity.class);
@@ -56,9 +65,9 @@ public class SignupActivity extends AppCompatActivity {
                     break;
                 case SUCCESS:
                     btnSignup.setEnabled(true);
-                    Toast.makeText(SignupActivity.this,
-                            "Account created! Please verify your email.",
-                            Toast.LENGTH_SHORT).show();
+                    DialogManager.showSuccessDialog(SignupActivity.this,
+                            "Welcome to IskolarPH!",
+                            "Your account has been created. Please check your email to verify your account.");
                     navigateToEmailVerification();
                     break;
                 case ERROR:
@@ -72,9 +81,24 @@ public class SignupActivity extends AppCompatActivity {
 
         signupViewModel.getErrorMessage().observe(this, error -> {
             if (error != null && !error.isEmpty()) {
-                Toast.makeText(SignupActivity.this, error, Toast.LENGTH_LONG).show();
+                DialogManager.showErrorDialog(SignupActivity.this, "Registration Issue", error);
             }
         });
+    }
+
+    private void setupConsentCheckboxes() {
+        // Enable/disable signup button based on consent
+        android.widget.CompoundButton.OnCheckedChangeListener consentListener = (buttonView, isChecked) -> {
+            boolean basicConsent = cbBasicConsent.isChecked();
+            btnSignup.setEnabled(basicConsent);
+
+            if (basicConsent) {
+                tvConsentWarning.setVisibility(android.view.View.GONE);
+            }
+        };
+
+        cbBasicConsent.setOnCheckedChangeListener(consentListener);
+        cbLocationConsent.setOnCheckedChangeListener(consentListener);
     }
 
     private void attemptSignup() {
@@ -82,8 +106,20 @@ public class SignupActivity extends AppCompatActivity {
         String email = etEmail.getText().toString().trim();
         String password = etPassword.getText().toString().trim();
         String confirmPassword = etConfirmPassword.getText().toString().trim();
+        boolean basicConsent = cbBasicConsent.isChecked();
+        boolean locationConsent = cbLocationConsent.isChecked();
 
-        signupViewModel.attemptSignup(fullName, email, password, confirmPassword);
+        // Show warning if consent not given
+        if (!basicConsent) {
+            tvConsentWarning.setVisibility(android.view.View.VISIBLE);
+            DialogManager.showErrorDialog(this,
+                    "Privacy Policy Required",
+                    "To create your account, we need your consent to our Privacy Policy. This helps us protect your data in compliance with Philippine data privacy laws.");
+            return;
+        }
+
+        tvConsentWarning.setVisibility(android.view.View.GONE);
+        signupViewModel.attemptSignup(fullName, email, password, confirmPassword, basicConsent, locationConsent);
     }
 
 

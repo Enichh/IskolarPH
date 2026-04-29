@@ -6,6 +6,7 @@ import android.os.Looper;
 import androidx.lifecycle.LiveData;
 import com.example.iskolarphh.callback.DeleteCallback;
 import com.example.iskolarphh.callback.InsertCallback;
+import com.example.iskolarphh.callback.StudentCallback;
 import com.example.iskolarphh.callback.UpdateCallback;
 import com.example.iskolarphh.database.AppDatabase;
 import com.example.iskolarphh.database.dao.StudentDao;
@@ -18,6 +19,7 @@ public class StudentRepository {
 
     private final StudentDao studentDao;
     private final ExecutorService executorService;
+    private volatile boolean isShutdown = false;
 
     public StudentRepository(Context context) {
         AppDatabase database = AppDatabase.getInstance(context);
@@ -38,6 +40,23 @@ public class StudentRepository {
     // Get student by Firebase UID
     public LiveData<Student> getStudentByFirebaseUid(String firebaseUid) {
         return studentDao.getStudentByFirebaseUid(firebaseUid);
+    }
+
+    // Get student by Firebase UID - SYNC version for background threads only
+    public Student getStudentByFirebaseUidSync(String firebaseUid) {
+        return studentDao.getStudentByFirebaseUidSync(firebaseUid);
+    }
+
+    // Get student by Firebase UID - ASYNC version for UI thread
+    public void getStudentByFirebaseUidAsync(String firebaseUid, StudentCallback callback) {
+        executorService.execute(() -> {
+            Student student = studentDao.getStudentByFirebaseUidSync(firebaseUid);
+            new Handler(Looper.getMainLooper()).post(() -> {
+                if (callback != null) {
+                    callback.onStudentLoaded(student);
+                }
+            });
+        });
     }
 
     // Insert new student (registration) - async with callback
@@ -93,6 +112,7 @@ public class StudentRepository {
 
     // Update location by firebaseUid - async with callback
     public void updateLocation(String firebaseUid, String location, UpdateCallback callback) {
+        if (isShutdown) return;
         executorService.execute(() -> {
             Student student = studentDao.getStudentByFirebaseUidSync(firebaseUid);
             int result = 0;
@@ -107,6 +127,16 @@ public class StudentRepository {
                 }
             });
         });
+    }
+
+    /**
+     * Shutdown the executor service. Call this when the repository is no longer needed.
+     */
+    public void shutdown() {
+        isShutdown = true;
+        if (executorService != null && !executorService.isShutdown()) {
+            executorService.shutdown();
+        }
     }
 
 }
