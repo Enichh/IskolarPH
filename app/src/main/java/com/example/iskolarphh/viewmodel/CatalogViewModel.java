@@ -106,10 +106,8 @@ public class CatalogViewModel extends AndroidViewModel {
 
     public void setSearchQuery(String query) {
         currentSearchQuery = query;
-        searchDebounceHelper.debounce(() -> {
-            filterTrigger.postValue(null);
-            updateFilterStatus();
-        });
+        updateFilterStatus();
+        searchDebounceHelper.debounce(() -> filterTrigger.postValue(null));
     }
 
     public void setLocationFilter(String location) {

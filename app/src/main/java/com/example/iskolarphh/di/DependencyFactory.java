@@ -14,6 +14,7 @@ import com.example.iskolarphh.service.GeocoderService;
 import com.example.iskolarphh.service.LocationFlowManager;
 import com.example.iskolarphh.service.LocationManager;
 import com.example.iskolarphh.service.ScholarshipFilterService;
+import com.example.iskolarphh.utils.SearchDebounceHelper;
 import com.example.iskolarphh.viewmodel.CatalogViewModel;
 import com.example.iskolarphh.viewmodel.DashboardViewModel;
 import com.example.iskolarphh.viewmodel.LocationViewModel;
@@ -156,7 +157,8 @@ public class DependencyFactory {
             application,
             new ScholarshipRepository(context),
             new StudentRepository(context),
-            getScholarshipFilterService()  // Stateless, safe to share
+            getScholarshipFilterService(),  // Stateless, safe to share
+            new SearchDebounceHelper(400)  // New instance per ViewModel for proper lifecycle
         );
     }
     
