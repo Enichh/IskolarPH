@@ -1,137 +1,120 @@
-# ISKOLARPH 🎓
-
-<div align="center">
+# ISKOLARPH
 
 ![ISKOLARPH Logo](logo_iskolar_ph.svg)
 
-[![GitHub stars](https://img.shields.io/github/stars/Enichh/ISKOLARPH?style=for-the-badge&logo=github)](https://github.com/Enichh/ISKOLARPH/stargazers)
-[![GitHub forks](https://img.shields.io/github/forks/Enichh/ISKOLARPH?style=for-the-badge&logo=github)](https://github.com/Enichh/ISKOLARPH/network)
-[![GitHub issues](https://img.shields.io/github/issues/Enichh/ISKOLARPH?style=for-the-badge&logo=github)](https://github.com/Enichh/ISKOLARPH/issues)
-[![License](https://img.shields.io/badge/license-MIT-blue?style=for-the-badge)](LICENSE)
-[![Platform](https://img.shields.io/badge/platform-Android-green?style=for-the-badge&logo=android)](https://android.com)
-[![API](https://img.shields.io/badge/API-24%2B-brightgreen?style=for-the-badge&logo=android)](https://android-arsenal.com/api?level=24)
+A comprehensive Android scholarship finder app designed specifically for Filipino students.
 
-**A comprehensive Android scholarship finder app designed specifically for Filipino students**
-
-[📱 Download APK](https://github.com/Enichh/ISKOLARPH/releases/latest) • [📖 User Manual](docs/USER_MANUAL.md) • [🚀 Quick Start](#quick-start)
-
-</div>
+[Download APK](https://github.com/Enichh/ISKOLARPH/releases/latest) • [User Manual](docs/USER_MANUAL.md)
 
 ---
 
-## 📋 Table of Contents
+## Overview
 
-- [✨ Features](#-features)
-- [📸 Screenshots](#-screenshots)
-- [🛠️ Tech Stack](#-tech-stack)
-- [🚀 Quick Start](#-quick-start)
-- [⚙️ Installation](#️-installation)
-- [📖 Usage](#-usage)
-- [🏗️ Architecture](#️-architecture)
-- [📁 Project Structure](#-project-structure)
-- [🤝 Contributing](#-contributing)
-- [📄 License](#-license)
-- [👥 Contributors](#-contributors)
+ISKOLARPH helps Filipino students discover and apply for scholarships that match their academic profile and location. The app provides personalized scholarship recommendations, AI-powered assistance, and a comprehensive catalog of available opportunities.
 
 ---
 
-## ✨ Features
+## Features
 
-### 🔐 Authentication & Security
-- **Secure User Registration** - Firebase-based authentication with email verification
-- **Password Reset** - Secure password recovery via email
-- **Session Management** - Persistent login with secure token handling
-- **Fresh Install Protection** - Automatic cleanup of stale auth sessions
+### Authentication & Security
 
-### 🎓 Scholarship Management
-- **Smart Matching** - AI-powered scholarship matching based on GWA and location
-- **Comprehensive Catalog** - Browse available scholarships with detailed information
-- **Eligibility Filtering** - Automatic filtering based on student qualifications
-- **Saved Scholarships** - Bookmark and manage favorite scholarship opportunities
-- **Application Tracking** - Monitor scholarship application status
+- Secure user registration with Firebase-based authentication and email verification
+- Password reset functionality via email
+- Persistent login with secure token handling
+- Automatic cleanup of stale auth sessions on fresh installs
 
-### 🤖 AI Assistant
-- **24/7 Chatbot Support** - Built-in AI assistant powered by LongCat API
-- **Educational Guidance** - Scholarship advice, application tips, study strategies
-- **Personalized Recommendations** - Tailored suggestions based on student profile
-- **Multi-language Support** - English and Filipino language assistance
+### Scholarship Management
 
-### 📱 User Experience
-- **Material Design 3** - Modern, intuitive interface with dynamic theming
-- **Bottom Navigation** - Easy access to Home, Catalog, Saved, and Profile
-- **Offline Capability** - Local data storage with Room database
-- **Real-time Updates** - LiveData for reactive UI updates
-- **Location Services** - GPS-based scholarship recommendations
-- **Responsive Design** - Optimized for various screen sizes and devices
+- AI-powered scholarship matching based on GWA and location
+- Comprehensive catalog with detailed scholarship information
+- Automatic eligibility filtering based on student qualifications
+- Bookmark and manage favorite scholarship opportunities
+- Track scholarship application status
 
----
+### AI Assistant
 
-## 📸 Screenshots
+- 24/7 chatbot support powered by LongCat API
+- Educational guidance for scholarship applications
+- Personalized recommendations based on student profile
+- English and Filipino language assistance
 
-> *Screenshots will be added here - contribute by adding your own!*
+### User Experience
 
-| Login | Dashboard | Catalog | Scholarship Detail |
-|-------|-----------|---------|-------------------|
-| ![Login](screenshots/login.png) | ![Dashboard](screenshots/dashboard.png) | ![Catalog](screenshots/catalog.png) | ![Detail](screenshots/detail.png) |
+- Material Design 3 with modern, intuitive interface
+- Bottom navigation for easy access to Home, Catalog, Saved, and Profile
+- Offline capability with local Room database storage
+- Real-time UI updates using LiveData
+- GPS-based scholarship recommendations
+- Responsive design optimized for various screen sizes
 
 ---
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 ### Core Technologies
-| Category | Technology | Version |
-|----------|------------|---------|
-| **Language** | Java | 17 |
-| **Platform** | Android SDK | API 24-36 |
-| **Architecture** | MVVM + Repository Pattern | - |
-| **Build System** | Gradle (Kotlin DSL) | 9.2.0 |
+
+| Category     | Technology                | Version   |
+| ------------ | ------------------------- | --------- |
+| Language     | Java                      | 17        |
+| Platform     | Android SDK               | API 24-36 |
+| Architecture | MVVM + Repository Pattern | -         |
+| Build System | Gradle (Kotlin DSL)       | 9.2.0     |
 
 ### Android Components
-| Component | Library | Version |
-|-----------|---------|---------|
-| **UI Framework** | Material Design 3 | 1.13.0 |
-| **AppCompat** | AndroidX AppCompat | 1.7.1 |
-| **Activity** | AndroidX Activity | 1.13.0 |
-| **ConstraintLayout** | AndroidX ConstraintLayout | 2.2.1 |
-| **RecyclerView** | AndroidX RecyclerView | 1.3.2 |
+
+| Component        | Library                   | Version |
+| ---------------- | ------------------------- | ------- |
+| UI Framework     | Material Design 3         | 1.13.0  |
+| AppCompat        | AndroidX AppCompat        | 1.7.1   |
+| Activity         | AndroidX Activity         | 1.13.0  |
+| ConstraintLayout | AndroidX ConstraintLayout | 2.2.1   |
+| RecyclerView     | AndroidX RecyclerView     | 1.3.2   |
 
 ### Data & Networking
-| Component | Library | Version |
-|-----------|---------|---------|
-| **Local Database** | Room | 2.8.4 |
-| **Networking** | Retrofit | 2.11.0 |
-| **HTTP Client** | OkHttp | 4.12.0 |
-| **JSON Parsing** | Gson | 2.10.1 |
-| **Image Loading** | Glide | 4.16.0 |
+
+| Component      | Library  | Version |
+| -------------- | -------- | ------- |
+| Local Database | Room     | 2.8.4   |
+| Networking     | Retrofit | 2.11.0  |
+| HTTP Client    | OkHttp   | 4.12.0  |
+| JSON Parsing   | Gson     | 2.10.1  |
+| Image Loading  | Glide    | 4.16.0  |
 
 ### Backend Services
-| Service | Technology |
-|---------|------------|
-| **Authentication** | Firebase Auth |
-| **Cloud Database** | Firebase Firestore |
-| **AI Integration** | LongCat API |
-| **Email Service** | Firebase Email Verification |
-| **Alternative Auth** | Supabase |
+
+| Service          | Technology                  |
+| ---------------- | --------------------------- |
+| Authentication   | Firebase Auth               |
+| Cloud Database   | Firebase Firestore          |
+| AI Integration   | LongCat API                 |
+| Email Service    | Firebase Email Verification |
+| Alternative Auth | Supabase                    |
 
 ### Testing
-| Type | Framework | Version |
-|------|-----------|---------|
-| **Unit Testing** | JUnit | 4.13.2 |
-| **Mocking** | Mockito | 5.7.0 |
-| **UI Testing** | Espresso | 3.7.0 |
-| **Android Testing** | Robolectric | 4.11.1 |
+
+| Type            | Framework   | Version |
+| --------------- | ----------- | ------- |
+| Unit Testing    | JUnit       | 4.13.2  |
+| Mocking         | Mockito     | 5.7.0   |
+| UI Testing      | Espresso    | 3.7.0   |
+| Android Testing | Robolectric | 4.11.1  |
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
+
 - Android Studio Hedgehog (2023.1.1) or later
 - JDK 17 or higher
 - Android SDK API 24-36
 - Firebase account (for authentication)
 
-### Run the App
+### Download APK
+
+The latest release APK is available on the [GitHub Releases page](https://github.com/Enichh/ISKOLARPH/releases/latest).
+
+### Build from Source
 
 ```bash
 # Clone the repository
@@ -141,17 +124,18 @@ cd ISKOLARPH
 # Build debug APK
 ./gradlew assembleDebug
 
-# Or open in Android Studio and click Run (▶️)
+# Or open in Android Studio and click Run
 ```
 
 The APK will be generated at:
+
 ```
 app/build/outputs/apk/debug/ISKOLARPH-v1.0-debug.apk
 ```
 
 ---
 
-## ⚙️ Installation
+## Installation
 
 ### 1. Clone the Repository
 
@@ -201,13 +185,12 @@ KEY_PASSWORD=your_key_password
 
 ---
 
-## 📖 Usage
+## Usage
 
-### For Students
+### Sign Up
 
-#### 1. Sign Up
 1. Launch the app
-2. Tap **"Sign Up"**
+2. Tap "Sign Up"
 3. Enter email and create a password (min 6 characters)
 4. Provide personal information:
    - First name, Last name, Middle initial
@@ -215,22 +198,25 @@ KEY_PASSWORD=your_key_password
    - Location (for personalized recommendations)
 5. Submit registration
 
-#### 2. Email Verification
+### Email Verification
+
 1. Check your email for verification link
 2. Click the link to verify
 3. Return to app and proceed to dashboard
 
-#### 3. Browse Scholarships
-1. Navigate to **Catalog** tab
+### Browse Scholarships
+
+1. Navigate to "Catalog" tab
 2. Use search bar to find specific scholarships
 3. Apply filters:
-   - **Location Filter**: Luzon, Visayas, Mindanao, National
-   - **GPA Filter**: Show only scholarships you qualify for
+   - Location Filter: Luzon, Visayas, Mindanao, National
+   - GPA Filter: Show only scholarships you qualify for
 4. Tap any scholarship to view details
-5. Tap **Save** button (bookmark icon) to save for later
+5. Tap "Save" button (bookmark icon) to save for later
 
-#### 4. Use AI Assistant
-1. Tap the **floating chat button** (bottom-right)
+### Use AI Assistant
+
+1. Tap the floating chat button (bottom-right)
 2. Ask questions about:
    - Scholarship eligibility
    - Application tips
@@ -238,69 +224,22 @@ KEY_PASSWORD=your_key_password
    - Study strategies
 3. Chat history is maintained for the current session
 
-#### 5. Manage Saved Scholarships
-1. Navigate to **Saved** tab
+### Manage Saved Scholarships
+
+1. Navigate to "Saved" tab
 2. View all bookmarked scholarships
 3. Tap to view details or remove from saved
 
-#### 6. Profile Management
-1. Navigate to **Profile** tab
+### Profile Management
+
+1. Navigate to "Profile" tab
 2. View account information
 3. Update GWA or location
 4. Access privacy settings
 
 ---
 
-## 🏗️ Architecture
-
-ISKOLARPH follows **MVVM (Model-View-ViewModel)** architecture with Repository pattern:
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                        PRESENTATION                         │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐     │
-│  │   Activity   │  │   Fragment   │  │    Dialog    │     │
-│  └──────┬───────┘  └──────┬───────┘  └──────┬───────┘     │
-├─────────┼─────────────────┼─────────────────┼─────────────┤
-│         │                 │                 │             │
-│    ┌────▼─────────────────▼─────────────────▼────┐        │
-│    │              ViewModel Layer               │        │
-│    │  (LoginViewModel, CatalogViewModel, ...)  │        │
-│    └────┬───────────────────────────────┬───────┘        │
-├─────────┼───────────────────────────────┼─────────────────┤
-│         │                               │                 │
-│  ┌──────▼──────┐              ┌─────────▼────────┐      │
-│  │ Repository  │              │    Repository    │      │
-│  │  (Student)  │              │  (Scholarship)   │      │
-│  └──────┬──────┘              └─────────┬────────┘      │
-├─────────┼───────────────────────────────┼─────────────────┤
-│         │                               │                 │
-│  ┌──────▼──────┐              ┌─────────▼────────┐      │
-│  │     DAO     │              │       DAO        │      │
-│  │  (Room DB)  │              │     (Room DB)    │      │
-│  └─────────────┘              └──────────────────┘      │
-│                                                         │
-│  ┌──────────────────────────────────────────────────┐  │
-│  │           API Service (Retrofit)                  │  │
-│  │  ┌──────────────┐  ┌──────────────────────────┐   │  │
-│  │  │ LongCat API  │  │   Firebase/Supabase      │   │  │
-│  │  └──────────────┘  └──────────────────────────┘   │  │
-│  └──────────────────────────────────────────────────┘  │
-└─────────────────────────────────────────────────────────────┘
-```
-
-### Architecture Principles
-
-| Principle | Implementation |
-|-----------|-----------------|
-| **Single Responsibility** | Each class has one purpose (Activity = UI, ViewModel = Logic, Repository = Data) |
-| **Open/Closed** | Extensible through interfaces (Callback classes, Service abstractions) |
-| **Dependency Inversion** | ViewModels depend on Repository abstractions, not concrete implementations |
-| **Interface Segregation** | Small, focused interfaces (InsertCallback, DeleteCallback, etc.) |
-
----
-
-## 📁 Project Structure
+## Project Structure
 
 ```
 app/src/main/java/com/example/iskolarphh/
@@ -391,63 +330,4 @@ app/src/main/java/com/example/iskolarphh/
 
 ---
 
-## 🤝 Contributing
-
-We welcome contributions! Please follow these steps:
-
-1. **Fork** the repository
-2. **Create** a feature branch (`git checkout -b feature/amazing-feature`)
-3. **Commit** your changes (`git commit -m 'feat: add amazing feature'`)
-4. **Push** to the branch (`git push origin feature/amazing-feature`)
-5. **Open** a Pull Request
-
-### Commit Message Convention
-
-We follow [Conventional Commits](https://www.conventionalcommits.org/):
-
-- `feat:` New feature
-- `fix:` Bug fix
-- `docs:` Documentation changes
-- `style:` Code style changes (formatting, etc.)
-- `refactor:` Code refactoring
-- `test:` Adding or updating tests
-- `chore:` Build process or auxiliary tool changes
-
----
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
----
-
-## 👥 Contributors
-
-Thanks to these amazing people who made this project possible:
-
-| Name | Role |
-|------|------|
-| **James Viray** | Lead Developer |
-| **Jason Villareal** | Backend Developer |
-| **Krizia Mae Oliva** | UI/UX Designer |
-| **Jayron Mina** | QA Engineer |
-| **Enoch Astor** | Project Manager |
-| **Andre Victorino** | Documentation |
-
----
-
-## 📞 Contact & Support
-
-- 🐛 **Bug Reports**: [GitHub Issues](https://github.com/Enichh/ISKOLARPH/issues)
-- 💡 **Feature Requests**: [GitHub Discussions](https://github.com/Enichh/ISKOLARPH/discussions)
-- 📧 **Email**: Contact contributors via GitHub
-
----
-
-<div align="center">
-
-Built with ❤️ for Filipino students
-
-**[⬆ Back to Top](#iskolarph-)**
-
-</div>
+Built for Filipino students to discover educational opportunities.
