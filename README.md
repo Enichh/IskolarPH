@@ -4,7 +4,7 @@
 
 A comprehensive Android scholarship finder app designed specifically for Filipino students.
 
-[Download APK](https://github.com/Enichh/ISKOLARPH/releases/latest)
+[Download APK](https://github.com/Enichh/ISKOLARPH/releases/latest) • [User Manual](docs/USER_MANUAL.md)
 
 ---
 
