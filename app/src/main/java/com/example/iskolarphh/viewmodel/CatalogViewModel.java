@@ -10,6 +10,7 @@ import com.example.iskolarphh.database.entity.Student;
 import com.example.iskolarphh.repository.ScholarshipRepository;
 import com.example.iskolarphh.repository.StudentRepository;
 import com.example.iskolarphh.service.ScholarshipFilterService;
+import com.example.iskolarphh.utils.SearchDebounceHelper;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import java.util.List;
@@ -20,6 +21,7 @@ public class CatalogViewModel extends AndroidViewModel {
     private final StudentRepository studentRepository;
     private final ScholarshipFilterService filterService;
     private final FirebaseAuth firebaseAuth;
+    private final SearchDebounceHelper searchDebounceHelper;
 
     private final MutableLiveData<List<Scholarship>> filteredScholarships = new MutableLiveData<>();
     private final MutableLiveData<Student> currentStudent = new MutableLiveData<>();
@@ -28,9 +30,9 @@ public class CatalogViewModel extends AndroidViewModel {
     private final MutableLiveData<String> filterStatus = new MutableLiveData<>();
 
     // Filter state
-    private String currentSearchQuery = "";
-    private String currentLocationFilter = null;
-    private boolean gpaFilterEnabled = false;
+    private volatile String currentSearchQuery = "";
+    private volatile String currentLocationFilter = null;
+    private volatile boolean gpaFilterEnabled = false;
     private final MutableLiveData<Void> filterTrigger = new MutableLiveData<>();
 
     // Observers for cleanup
@@ -41,7 +43,8 @@ public class CatalogViewModel extends AndroidViewModel {
         this(application, 
              new ScholarshipRepository(application),
              new StudentRepository(application),
-             new ScholarshipFilterService());
+             new ScholarshipFilterService(),
+             new SearchDebounceHelper(400));
         filterTrigger.setValue(null);
     }
 
@@ -49,11 +52,13 @@ public class CatalogViewModel extends AndroidViewModel {
     public CatalogViewModel(Application application,
                            ScholarshipRepository scholarshipRepository,
                            StudentRepository studentRepository,
-                           ScholarshipFilterService filterService) {
+                           ScholarshipFilterService filterService,
+                           SearchDebounceHelper searchDebounceHelper) {
         super(application);
         this.scholarshipRepository = scholarshipRepository;
         this.studentRepository = studentRepository;
         this.filterService = filterService;
+        this.searchDebounceHelper = searchDebounceHelper;
         this.firebaseAuth = FirebaseAuth.getInstance();
     }
 
@@ -101,8 +106,10 @@ public class CatalogViewModel extends AndroidViewModel {
 
     public void setSearchQuery(String query) {
         currentSearchQuery = query;
-        filterTrigger.setValue(null);
-        updateFilterStatus();
+        searchDebounceHelper.debounce(() -> {
+            filterTrigger.postValue(null);
+            updateFilterStatus();
+        });
     }
 
     public void setLocationFilter(String location) {
@@ -130,23 +137,17 @@ public class CatalogViewModel extends AndroidViewModel {
     }
 
     public LiveData<List<Scholarship>> getScholarshipsLiveData() {
-        return androidx.lifecycle.Transformations.switchMap(filterTrigger, trigger ->
-            scholarshipRepository.searchAndFilterScholarships(currentSearchQuery, currentLocationFilter)
-        );
+        return androidx.lifecycle.Transformations.switchMap(filterTrigger, trigger -> {
+            Student student = currentStudent.getValue();
+            Double studentGpa = student != null ? student.getGpa() : null;
+            return scholarshipRepository.searchAndFilterScholarships(currentSearchQuery, currentLocationFilter, studentGpa, gpaFilterEnabled);
+        });
     }
 
     public void setCurrentStudent(Student student) {
         currentStudent.setValue(student);
         updateLocationHeader(student);
         updateFilterStatus();
-    }
-
-    public List<Scholarship> applyGpaFilter(List<Scholarship> scholarships) {
-        Student student = currentStudent.getValue();
-        if (student != null && gpaFilterEnabled) {
-            return filterService.filterByGpa(scholarships, student.getGpa());
-        }
-        return scholarships;
     }
 
     private void updateLocationHeader(Student student) {
@@ -196,6 +197,10 @@ public class CatalogViewModel extends AndroidViewModel {
             studentObserver = null;
         }
         studentLiveData = null;
+        // Shutdown debounce helper
+        if (searchDebounceHelper != null) {
+            searchDebounceHelper.shutdown();
+        }
         // Shutdown repository executors
         if (scholarshipRepository != null) {
             scholarshipRepository.shutdown();

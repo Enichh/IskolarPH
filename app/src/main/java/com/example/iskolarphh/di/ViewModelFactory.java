@@ -6,7 +6,6 @@ import androidx.lifecycle.ViewModel;
 import androidx.lifecycle.ViewModelProvider;
 import com.example.iskolarphh.viewmodel.CatalogViewModel;
 import com.example.iskolarphh.viewmodel.DashboardViewModel;
-import com.example.iskolarphh.viewmodel.FilterViewModel;
 import com.example.iskolarphh.viewmodel.LocationViewModel;
 import com.example.iskolarphh.viewmodel.LoginViewModel;
 import com.example.iskolarphh.viewmodel.ProfileViewModel;
@@ -41,8 +40,6 @@ public class ViewModelFactory implements ViewModelProvider.Factory {
             return (T) dependencyFactory.createDashboardViewModel(application);
         } else if (modelClass.isAssignableFrom(ProfileViewModel.class)) {
             return (T) dependencyFactory.createProfileViewModel(application);
-        } else if (modelClass.isAssignableFrom(FilterViewModel.class)) {
-            return (T) dependencyFactory.createFilterViewModel(application);
         } else if (modelClass.isAssignableFrom(LocationViewModel.class)) {
             return (T) dependencyFactory.createLocationViewModel(application);
         } else if (modelClass.isAssignableFrom(StudentViewModel.class)) {

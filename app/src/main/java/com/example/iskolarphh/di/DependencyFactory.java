@@ -16,7 +16,6 @@ import com.example.iskolarphh.service.LocationManager;
 import com.example.iskolarphh.service.ScholarshipFilterService;
 import com.example.iskolarphh.viewmodel.CatalogViewModel;
 import com.example.iskolarphh.viewmodel.DashboardViewModel;
-import com.example.iskolarphh.viewmodel.FilterViewModel;
 import com.example.iskolarphh.viewmodel.LocationViewModel;
 import com.example.iskolarphh.viewmodel.LoginViewModel;
 import com.example.iskolarphh.viewmodel.ProfileViewModel;
@@ -185,10 +184,6 @@ public class DependencyFactory {
             studentRepo,
             locationFlow
         );
-    }
-    
-    public FilterViewModel createFilterViewModel(android.app.Application application) {
-        return new FilterViewModel(application, getScholarshipFilterService());
     }
     
     public LocationViewModel createLocationViewModel(android.app.Application application) {

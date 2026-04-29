@@ -25,7 +25,7 @@ public interface ScholarshipDao {
 
     @Query("SELECT * FROM scholarships WHERE " +
             "(:searchQuery IS NULL OR :searchQuery = '' OR scholarship_name LIKE '%' || :searchQuery || '%' OR description LIKE '%' || :searchQuery || '%') AND " +
-            "(:location IS NULL OR :location = '' OR location = :location) " +
+            "(:location IS NULL OR :location = '' OR LOWER(location) = LOWER(:location)) " +
             "ORDER BY id ASC")
     LiveData<List<Scholarship>> searchAndFilterScholarships(String searchQuery, String location);
 

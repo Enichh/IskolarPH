@@ -136,8 +136,7 @@ public class CatalogFragment extends Fragment {
 
         catalogViewModel.getScholarshipsLiveData().observe(getViewLifecycleOwner(), scholarships -> {
             if (adapter != null) {
-                List<Scholarship> filtered = catalogViewModel.applyGpaFilter(scholarships);
-                adapter.submitList(filtered);
+                adapter.submitList(scholarships);
             }
         });
 
