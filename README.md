@@ -6,7 +6,11 @@
 
 </div>
 
+<div align="center">
+
 A comprehensive Android scholarship finder app designed specifically for Filipino students.
+
+</div>
 
 <div align="center">
 
