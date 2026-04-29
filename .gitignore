@@ -51,9 +51,6 @@ Thumbs.db
 /test/
 /androidTest/
 
-# Markdown files
-*.md
-
 # Firebase Cloud Functions
 functions/node_modules/
 functions/.env
