@@ -9536,264 +9536,6 @@ public class LoginViewModel extends AndroidViewModel {
 }
 </file>
 
-<file path="app/src/main/java/com/example/iskolarphh/viewmodel/ProfileViewModel.java">
-package com.example.iskolarphh.viewmodel;
-
-import android.app.Application;
-import androidx.lifecycle.AndroidViewModel;
-import androidx.lifecycle.LiveData;
-import androidx.lifecycle.MutableLiveData;
-import com.example.iskolarphh.callback.LocationCallback;
-import com.example.iskolarphh.callback.StudentCallback;
-import com.example.iskolarphh.callback.UpdateCallback;
-import com.example.iskolarphh.database.entity.Student;
-import com.example.iskolarphh.repository.StudentRepository;
-import com.example.iskolarphh.service.LocationFlowManager;
-import com.example.iskolarphh.service.LocationManager;
-import com.example.iskolarphh.service.GeocoderService;
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
-
-public class ProfileViewModel extends AndroidViewModel {
-
-    private final StudentRepository studentRepository;
-    private final LocationFlowManager locationFlowManager;
-    private final FirebaseAuth firebaseAuth;
-
-    private final MutableLiveData<Student> currentStudent = new MutableLiveData<>();
-    private final MutableLiveData<Boolean> updateSuccess = new MutableLiveData<>();
-    private final MutableLiveData<String> errorMessage = new MutableLiveData<>();
-    private final MutableLiveData<String> locationUpdateStatus = new MutableLiveData<>();
-
-    public ProfileViewModel(Application application) {
-        this(application, 
-             new StudentRepository(application),
-             new LocationFlowManager(
-                 application,
-                 new LocationManager(),
-                 new GeocoderService(),
-                 new StudentRepository(application)
-             ));
-    }
-
-    // Constructor with dependency injection
-    public ProfileViewModel(Application application,
-                             StudentRepository studentRepository,
-                             LocationFlowManager locationFlowManager) {
-        super(application);
-        this.studentRepository = studentRepository;
-        this.locationFlowManager = locationFlowManager;
-        this.firebaseAuth = FirebaseAuth.getInstance();
-    }
-
-    public LiveData<Student> getCurrentStudent() {
-        return currentStudent;
-    }
-
-    public LiveData<Boolean> getUpdateSuccess() {
-        return updateSuccess;
-    }
-
-    public LiveData<String> getErrorMessage() {
-        return errorMessage;
-    }
-
-    public LiveData<String> getLocationUpdateStatus() {
-        return locationUpdateStatus;
-    }
-
-    public void loadStudentData() {
-        FirebaseUser firebaseUser = firebaseAuth.getCurrentUser();
-        if (firebaseUser != null) {
-            String uid = firebaseUser.getUid();
-            String email = firebaseUser.getEmail() != null ? firebaseUser.getEmail() : "";
-            
-            // Use async method to load student data
-            studentRepository.getStudentByFirebaseUidAsync(uid, student -> {
-                if (student != null) {
-                    // Student found in database
-                    currentStudent.postValue(student);
-                } else {
-                    // No student record found (old account or data loss)
-                    // Create a default student record for backwards compatibility
-                    Student newStudent = createDefaultStudent(uid, email);
-                    studentRepository.insert(newStudent, id -> {
-                        if (id > 0) {
-                            newStudent.setId((int) id);
-                            currentStudent.postValue(newStudent);
-                        } else {
-                            errorMessage.postValue("Failed to create profile. Please try again.");
-                        }
-                    });
-                }
-            });
-        }
-    }
-
-    private Student createDefaultStudent(String firebaseUid, String email) {
-        Student student = new Student(
-                firebaseUid,
-                "New",          // firstName
-                "User",         // lastName
-                "",             // middleInitial
-                "",             // location
-                0.0             // gpa
-        );
-        student.setEmail(email);
-        student.setCollege("");
-        student.setCourse("");
-        student.setContactNumber("");
-        return student;
-    }
-
-    public void updateProfile(String fullName, String gpaStr, String location, String email,
-                              String college, String course, String contactNumber, String photoPath) {
-        Student student = currentStudent.getValue();
-        if (student == null) {
-            // Try to reload student data asynchronously
-            FirebaseUser firebaseUser = firebaseAuth.getCurrentUser();
-            if (firebaseUser != null) {
-                studentRepository.getStudentByFirebaseUidAsync(firebaseUser.getUid(), loadedStudent -> {
-                    if (loadedStudent != null) {
-                        currentStudent.postValue(loadedStudent);
-                        // Proceed with update using loaded student
-                        performProfileUpdate(loadedStudent, fullName, gpaStr, location, email,
-                                college, course, contactNumber, photoPath);
-                    } else {
-                        errorMessage.postValue("We couldn't load your profile data. Please close the app and try again.");
-                    }
-                });
-                return;
-            } else {
-                errorMessage.postValue("Your session has expired. Please sign in again.");
-                return;
-            }
-        }
-
-        // Student already loaded, proceed with update
-        performProfileUpdate(student, fullName, gpaStr, location, email,
-                college, course, contactNumber, photoPath);
-    }
-
-    private void performProfileUpdate(Student student, String fullName, String gpaStr, String location,
-                                      String email, String college, String course, String contactNumber,
-                                      String photoPath) {
-        if (fullName.isEmpty() || gpaStr.isEmpty() || location.isEmpty() || email.isEmpty()) {
-            errorMessage.postValue("Please fill in all required fields (Name, GPA, Location, and Email) to update your profile.");
-            return;
-        }
-
-        try {
-            double gpa = Double.parseDouble(gpaStr);
-            if (gpa < 0 || gpa > 5.0) {
-                errorMessage.postValue("Please enter a valid GPA between 0 and 5.0. If you're using a different scale, please convert it.");
-                return;
-            }
-
-            String[] nameParts = fullName.split(" ", 3);
-            if (nameParts.length < 2) {
-                errorMessage.postValue("Please enter your full name including both first and last name (e.g., Juan dela Cruz).");
-                return;
-            }
-
-            student.setFirstName(nameParts[0]);
-            student.setLastName(nameParts[nameParts.length - 1]);
-            if (nameParts.length == 3) {
-                student.setMiddleInitial(nameParts[1]);
-            } else {
-                student.setMiddleInitial("");
-            }
-            student.setGpa(gpa);
-            student.setLocation(location);
-            student.setEmail(email);
-            student.setCollege(college.isEmpty() ? null : college);
-            student.setCourse(course.isEmpty() ? null : course);
-            student.setContactNumber(contactNumber.isEmpty() ? null : contactNumber);
-            if (photoPath != null) {
-                student.setProfilePhotoPath(photoPath);
-            }
-
-            studentRepository.update(student, new UpdateCallback() {
-                @Override
-                public void onUpdateComplete(int rowsAffected) {
-                    if (rowsAffected > 0) {
-                        updateSuccess.postValue(true);
-                        errorMessage.postValue("Your profile has been updated successfully!");
-                    } else {
-                        updateSuccess.postValue(false);
-                        errorMessage.postValue("We couldn't save your changes. Please try again or check your connection.");
-                    }
-                }
-            });
-        } catch (NumberFormatException e) {
-            errorMessage.postValue("The GPA you entered doesn't look like a number. Please use a format like 3.5 or 4.0.");
-        }
-    }
-
-    public void fetchCurrentLocation() {
-        locationFlowManager.fetchAndSaveLocation(new LocationCallback() {
-            @Override
-            public void onLocationRetrieved(String location, double latitude, double longitude) {
-                locationUpdateStatus.postValue(location);
-            }
-
-            @Override
-            public void onLocationError(String errorMessage) {
-                ProfileViewModel.this.errorMessage.postValue(errorMessage);
-            }
-
-            @Override
-            public void onPermissionDenied() {
-                ProfileViewModel.this.errorMessage.postValue("Location permission denied");
-            }
-        });
-    }
-
-    public boolean hasLocationPermissions() {
-        return locationFlowManager.hasLocationPermissions();
-    }
-
-    public void requestLocationPermissions(android.app.Activity activity, int requestCode) {
-        locationFlowManager.requestLocationPermissions(activity, requestCode);
-    }
-
-    public void handlePermissionResult(int requestCode, String[] permissions, int[] grantResults) {
-        locationFlowManager.handlePermissionResult(requestCode, permissions, grantResults, new LocationCallback() {
-            @Override
-            public void onLocationRetrieved(String location, double latitude, double longitude) {
-                locationUpdateStatus.postValue(location);
-            }
-
-            @Override
-            public void onLocationError(String errorMessage) {
-                ProfileViewModel.this.errorMessage.postValue(errorMessage);
-            }
-
-            @Override
-            public void onPermissionDenied() {
-                ProfileViewModel.this.errorMessage.postValue("Location permission denied");
-            }
-        });
-    }
-
-    public void logout() {
-        firebaseAuth.signOut();
-    }
-
-    @Override
-    protected void onCleared() {
-        super.onCleared();
-        // Shutdown executors to prevent thread leaks
-        if (locationFlowManager != null) {
-            locationFlowManager.shutdown();
-        }
-        if (studentRepository != null) {
-            studentRepository.shutdown();
-        }
-    }
-}
-</file>
-
 <file path="app/src/main/java/com/example/iskolarphh/viewmodel/StudentViewModel.java">
 package com.example.iskolarphh.viewmodel;
 
@@ -10331,108 +10073,6 @@ public class StudentViewModel extends AndroidViewModel {
         app:layout_constraintTop_toBottomOf="@id/cardForm" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
-</file>
-
-<file path="app/src/main/res/layout/dialog_chatbot.xml">
-<?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:orientation="vertical"
-    android:background="#FFFFFF"
-    android:padding="16dp">
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:paddingBottom="8dp">
-
-        <TextView
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="IskolarPH AI"
-            android:textSize="18sp"
-            android:textStyle="bold"
-            android:textColor="#001F3F" />
-
-        <ImageButton
-            android:id="@+id/btnClose"
-            android:layout_width="32dp"
-            android:layout_height="32dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:src="@drawable/ic_back"
-            app:tint="#001F3F"
-            android:contentDescription="Close chat" />
-    </LinearLayout>
-
-    <View
-        android:layout_width="match_parent"
-        android:layout_height="2dp"
-        android:background="#D4A017" />
-
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/recyclerMessages"
-        android:layout_width="match_parent"
-        android:layout_height="450dp"
-        android:paddingVertical="8dp"
-        android:clipToPadding="false"
-        android:background="#F5F5F5" />
-
-    <ProgressBar
-        android:id="@+id/progressBar"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        android:visibility="gone" />
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:paddingTop="8dp">
-
-        <com.google.android.material.textfield.TextInputLayout
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            style="@style/Widget.Material3.TextInputLayout.OutlinedBox.Dense"
-            app:boxCornerRadiusBottomEnd="24dp"
-            app:boxCornerRadiusBottomStart="24dp"
-            app:boxCornerRadiusTopEnd="24dp"
-            app:boxCornerRadiusTopStart="24dp"
-            app:boxStrokeColor="#001F3F"
-            app:boxStrokeWidth="1dp"
-            app:hintTextColor="#001F3F"
-            app:boxBackgroundColor="#FFFFFF">
-
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/editMessage"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:hint="Ask about scholarships..."
-                android:inputType="textMultiLine"
-                android:maxLines="3"
-                android:minHeight="48dp" />
-        </com.google.android.material.textfield.TextInputLayout>
-
-        <com.google.android.material.floatingactionbutton.FloatingActionButton
-            android:id="@+id/btnSend"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
-            android:src="@drawable/ic_check"
-            android:contentDescription="Send message"
-            app:backgroundTint="#001F3F"
-            app:tint="#FFFFFF"
-            app:fabSize="mini" />
-    </LinearLayout>
-
-</LinearLayout>
 </file>
 
 <file path="app/src/main/res/layout/item_message_assistant.xml">
@@ -11782,6 +11422,263 @@ public class ChatbotDialog extends DialogFragment {
 }
 </file>
 
+<file path="app/src/main/java/com/example/iskolarphh/viewmodel/ProfileViewModel.java">
+package com.example.iskolarphh.viewmodel;
+
+import android.app.Application;
+import androidx.lifecycle.AndroidViewModel;
+import androidx.lifecycle.LiveData;
+import androidx.lifecycle.MutableLiveData;
+import com.example.iskolarphh.callback.LocationCallback;
+import com.example.iskolarphh.callback.StudentCallback;
+import com.example.iskolarphh.callback.UpdateCallback;
+import com.example.iskolarphh.database.entity.Student;
+import com.example.iskolarphh.repository.StudentRepository;
+import com.example.iskolarphh.service.LocationFlowManager;
+import com.example.iskolarphh.service.LocationManager;
+import com.example.iskolarphh.service.GeocoderService;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+
+public class ProfileViewModel extends AndroidViewModel {
+
+    private final StudentRepository studentRepository;
+    private final LocationFlowManager locationFlowManager;
+    private final FirebaseAuth firebaseAuth;
+
+    private final MutableLiveData<Student> currentStudent = new MutableLiveData<>();
+    private final MutableLiveData<Boolean> updateSuccess = new MutableLiveData<>();
+    private final MutableLiveData<String> errorMessage = new MutableLiveData<>();
+    private final MutableLiveData<String> locationUpdateStatus = new MutableLiveData<>();
+
+    public ProfileViewModel(Application application) {
+        this(application, 
+             new StudentRepository(application),
+             new LocationFlowManager(
+                 application,
+                 new LocationManager(),
+                 new GeocoderService(),
+                 new StudentRepository(application)
+             ));
+    }
+
+    // Constructor with dependency injection
+    public ProfileViewModel(Application application,
+                             StudentRepository studentRepository,
+                             LocationFlowManager locationFlowManager) {
+        super(application);
+        this.studentRepository = studentRepository;
+        this.locationFlowManager = locationFlowManager;
+        this.firebaseAuth = FirebaseAuth.getInstance();
+    }
+
+    public LiveData<Student> getCurrentStudent() {
+        return currentStudent;
+    }
+
+    public LiveData<Boolean> getUpdateSuccess() {
+        return updateSuccess;
+    }
+
+    public LiveData<String> getErrorMessage() {
+        return errorMessage;
+    }
+
+    public LiveData<String> getLocationUpdateStatus() {
+        return locationUpdateStatus;
+    }
+
+    public void loadStudentData() {
+        FirebaseUser firebaseUser = firebaseAuth.getCurrentUser();
+        if (firebaseUser != null) {
+            String uid = firebaseUser.getUid();
+            String email = firebaseUser.getEmail() != null ? firebaseUser.getEmail() : "";
+            
+            // Use async method to load student data
+            studentRepository.getStudentByFirebaseUidAsync(uid, student -> {
+                if (student != null) {
+                    // Student found in database
+                    currentStudent.postValue(student);
+                } else {
+                    // No student record found (old account or data loss)
+                    // Create a default student record for backwards compatibility
+                    Student newStudent = createDefaultStudent(uid, email);
+                    studentRepository.insert(newStudent, id -> {
+                        if (id > 0) {
+                            newStudent.setId((int) id);
+                            currentStudent.postValue(newStudent);
+                        } else {
+                            errorMessage.postValue("Failed to create profile. Please try again.");
+                        }
+                    });
+                }
+            });
+        }
+    }
+
+    private Student createDefaultStudent(String firebaseUid, String email) {
+        Student student = new Student(
+                firebaseUid,
+                "New",          // firstName
+                "User",         // lastName
+                "",             // middleInitial
+                "",             // location
+                0.0             // gpa
+        );
+        student.setEmail(email);
+        student.setCollege("");
+        student.setCourse("");
+        student.setContactNumber("");
+        return student;
+    }
+
+    public void updateProfile(String fullName, String gpaStr, String location, String email,
+                              String college, String course, String contactNumber, String photoPath) {
+        Student student = currentStudent.getValue();
+        if (student == null) {
+            // Try to reload student data asynchronously
+            FirebaseUser firebaseUser = firebaseAuth.getCurrentUser();
+            if (firebaseUser != null) {
+                studentRepository.getStudentByFirebaseUidAsync(firebaseUser.getUid(), loadedStudent -> {
+                    if (loadedStudent != null) {
+                        currentStudent.postValue(loadedStudent);
+                        // Proceed with update using loaded student
+                        performProfileUpdate(loadedStudent, fullName, gpaStr, location, email,
+                                college, course, contactNumber, photoPath);
+                    } else {
+                        errorMessage.postValue("We couldn't load your profile data. Please close the app and try again.");
+                    }
+                });
+                return;
+            } else {
+                errorMessage.postValue("Your session has expired. Please sign in again.");
+                return;
+            }
+        }
+
+        // Student already loaded, proceed with update
+        performProfileUpdate(student, fullName, gpaStr, location, email,
+                college, course, contactNumber, photoPath);
+    }
+
+    private void performProfileUpdate(Student student, String fullName, String gpaStr, String location,
+                                      String email, String college, String course, String contactNumber,
+                                      String photoPath) {
+        if (fullName.isEmpty() || gpaStr.isEmpty() || location.isEmpty() || email.isEmpty()) {
+            errorMessage.postValue("Please fill in all required fields (Name, GPA, Location, and Email) to update your profile.");
+            return;
+        }
+
+        try {
+            double gpa = Double.parseDouble(gpaStr);
+            if (gpa < 0 || gpa > 5.0) {
+                errorMessage.postValue("Please enter a valid GPA between 0 and 5.0. If you're using a different scale, please convert it.");
+                return;
+            }
+
+            String[] nameParts = fullName.split(" ", 3);
+            if (nameParts.length < 2) {
+                errorMessage.postValue("Please enter your full name including both first and last name (e.g., Juan dela Cruz).");
+                return;
+            }
+
+            student.setFirstName(nameParts[0]);
+            student.setLastName(nameParts[nameParts.length - 1]);
+            if (nameParts.length == 3) {
+                student.setMiddleInitial(nameParts[1]);
+            } else {
+                student.setMiddleInitial("");
+            }
+            student.setGpa(gpa);
+            student.setLocation(location);
+            student.setEmail(email);
+            student.setCollege(college.isEmpty() ? null : college);
+            student.setCourse(course.isEmpty() ? null : course);
+            student.setContactNumber(contactNumber.isEmpty() ? null : contactNumber);
+            if (photoPath != null) {
+                student.setProfilePhotoPath(photoPath);
+            }
+
+            studentRepository.update(student, new UpdateCallback() {
+                @Override
+                public void onUpdateComplete(int rowsAffected) {
+                    if (rowsAffected > 0) {
+                        updateSuccess.postValue(true);
+                    } else {
+                        updateSuccess.postValue(false);
+                        errorMessage.postValue("We couldn't save your changes. Please try again or check your connection.");
+                    }
+                }
+            });
+        } catch (NumberFormatException e) {
+            errorMessage.postValue("The GPA you entered doesn't look like a number. Please use a format like 3.5 or 4.0.");
+        }
+    }
+
+    public void fetchCurrentLocation() {
+        locationFlowManager.fetchAndSaveLocation(new LocationCallback() {
+            @Override
+            public void onLocationRetrieved(String location, double latitude, double longitude) {
+                locationUpdateStatus.postValue(location);
+            }
+
+            @Override
+            public void onLocationError(String errorMessage) {
+                ProfileViewModel.this.errorMessage.postValue(errorMessage);
+            }
+
+            @Override
+            public void onPermissionDenied() {
+                ProfileViewModel.this.errorMessage.postValue("Location permission denied");
+            }
+        });
+    }
+
+    public boolean hasLocationPermissions() {
+        return locationFlowManager.hasLocationPermissions();
+    }
+
+    public void requestLocationPermissions(android.app.Activity activity, int requestCode) {
+        locationFlowManager.requestLocationPermissions(activity, requestCode);
+    }
+
+    public void handlePermissionResult(int requestCode, String[] permissions, int[] grantResults) {
+        locationFlowManager.handlePermissionResult(requestCode, permissions, grantResults, new LocationCallback() {
+            @Override
+            public void onLocationRetrieved(String location, double latitude, double longitude) {
+                locationUpdateStatus.postValue(location);
+            }
+
+            @Override
+            public void onLocationError(String errorMessage) {
+                ProfileViewModel.this.errorMessage.postValue(errorMessage);
+            }
+
+            @Override
+            public void onPermissionDenied() {
+                ProfileViewModel.this.errorMessage.postValue("Location permission denied");
+            }
+        });
+    }
+
+    public void logout() {
+        firebaseAuth.signOut();
+    }
+
+    @Override
+    protected void onCleared() {
+        super.onCleared();
+        // Shutdown executors to prevent thread leaks
+        if (locationFlowManager != null) {
+            locationFlowManager.shutdown();
+        }
+        if (studentRepository != null) {
+            studentRepository.shutdown();
+        }
+    }
+}
+</file>
+
 <file path="app/src/main/java/com/example/iskolarphh/viewmodel/SignupViewModel.java">
 package com.example.iskolarphh.viewmodel;
 
@@ -12011,6 +11908,109 @@ public class SignupViewModel extends AndroidViewModel {
 <inset xmlns:android="http://schemas.android.com/apk/res/android"
     android:drawable="@drawable/logo_iskolar_ph"
     android:inset="18dp" />
+</file>
+
+<file path="app/src/main/res/layout/dialog_chatbot.xml">
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="#FFFFFF"
+    android:padding="16dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingBottom="8dp">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="IskolarPH AI"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:textColor="#001F3F" />
+
+        <ImageButton
+            android:id="@+id/btnClose"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/ic_back"
+            app:tint="#001F3F"
+            android:contentDescription="Close chat" />
+    </LinearLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="2dp"
+        android:background="#D4A017" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerMessages"
+        android:layout_width="match_parent"
+        android:layout_height="450dp"
+        android:paddingVertical="8dp"
+        android:clipToPadding="false"
+        android:background="#F5F5F5" />
+
+    <ProgressBar
+        android:id="@+id/progressBar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:visibility="gone" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingTop="8dp">
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            style="@style/Widget.Material3.TextInputLayout.OutlinedBox.Dense"
+            app:boxCornerRadiusBottomEnd="24dp"
+            app:boxCornerRadiusBottomStart="24dp"
+            app:boxCornerRadiusTopEnd="24dp"
+            app:boxCornerRadiusTopStart="24dp"
+            app:boxStrokeColor="#001F3F"
+            app:boxStrokeWidth="1dp"
+            app:hintTextColor="#001F3F"
+            app:boxBackgroundColor="#FFFFFF">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/editMessage"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Ask about scholarships..."
+                android:inputType="textMultiLine"
+                android:maxLines="3"
+                android:minHeight="48dp"
+                android:textColor="#000000" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/btnSend"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:src="@drawable/ic_check"
+            android:contentDescription="Send message"
+            app:backgroundTint="#001F3F"
+            app:tint="#FFFFFF"
+            app:fabSize="mini" />
+    </LinearLayout>
+
+</LinearLayout>
 </file>
 
 <file path="gradle/wrapper/gradle-wrapper.properties">
@@ -15615,509 +15615,6 @@ public class DashboardFragment extends Fragment {
 }
 </file>
 
-<file path="app/src/main/java/com/example/iskolarphh/ui/ProfileFragment.java">
-package com.example.iskolarphh.ui;
-
-import android.Manifest;
-import android.content.Intent;
-import android.content.pm.PackageManager;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.os.Bundle;
-import android.provider.MediaStore;
-import android.view.LayoutInflater;
-import android.view.View;
-import android.view.ViewGroup;
-import android.widget.Button;
-import android.widget.EditText;
-import android.widget.ImageButton;
-import android.widget.ImageView;
-
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
-import com.example.iskolarphh.service.LocationFlowManager;
-import com.example.iskolarphh.service.LocationManager;
-import com.example.iskolarphh.service.GeocoderService;
-import com.example.iskolarphh.repository.StudentRepository;
-import android.widget.LinearLayout;
-import android.widget.ProgressBar;
-import android.widget.TextView;
-
-import androidx.activity.result.ActivityResultLauncher;
-import androidx.activity.result.contract.ActivityResultContracts;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.core.content.ContextCompat;
-import androidx.fragment.app.Fragment;
-import androidx.lifecycle.ViewModelProvider;
-import androidx.lifecycle.Observer;
-
-import com.example.iskolarphh.R;
-import com.example.iskolarphh.callback.LocationCallback;
-import com.example.iskolarphh.database.entity.Student;
-import com.example.iskolarphh.di.ViewModelFactory;
-import com.example.iskolarphh.ui.LogoutConfirmationDialog;
-import com.example.iskolarphh.viewmodel.ProfileViewModel;
-import com.example.iskolarphh.ui.DialogManager;
-import com.example.iskolarphh.util.LocationConstants;
-
-public class ProfileFragment extends Fragment {
-
-    private ProfileViewModel profileViewModel;
-    private FirebaseAuth firebaseAuth;
-    private LocationFlowManager locationFlowManager;
-    private Student currentStudent;
-
-    private TextView tvProfileName;
-    private TextView tvGPADisplay;
-    private TextView tvLocationDisplay;
-    private TextView tvEmailDisplay;
-    private TextView tvCourseDisplay;
-    private TextView tvCollegeDisplay;
-    private TextView tvContactDisplay;
-    private ImageView ivProfilePicture;
-    private ImageView btnChangePhoto;
-    private EditText etFullName;
-    private EditText etGPA;
-    private EditText etLocation;
-    private EditText etEmail;
-    private EditText etCollege;
-    private EditText etCourse;
-    private EditText etContactNumber;
-    private Button btnUpdate;
-    private Button btnExit;
-    private ImageButton btnUseCurrentLocation;
-    private Button btnThemeToggle;
-    private ProgressBar progressBarLocation;
-
-    private boolean isEditMode = false;
-    private boolean isDarkTheme = false;
-    private boolean isStudentLoaded = false;
-
-    private ActivityResultLauncher<Intent> cameraLauncher;
-    private ActivityResultLauncher<String> cameraPermissionLauncher;
-    private Bitmap capturedPhotoBitmap;
-
-    @Override
-    public void onCreate(@Nullable Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        
-        // Register Camera Permission Launcher
-        cameraPermissionLauncher = registerForActivityResult(
-            new ActivityResultContracts.RequestPermission(),
-            isGranted -> {
-                if (isGranted) {
-                    openCamera();
-                } else {
-                    DialogManager.showErrorDialog(requireContext(),
-                            "Permission Needed",
-                            "Camera access is required to update your profile photo. Please enable it in your device settings.");
-                }
-            }
-        );
-
-        // Register Camera Launcher
-        cameraLauncher = registerForActivityResult(
-            new ActivityResultContracts.StartActivityForResult(),
-            result -> {
-                if (result.getResultCode() == android.app.Activity.RESULT_OK && result.getData() != null) {
-                    Bundle extras = result.getData().getExtras();
-                    if (extras != null) {
-                        Bitmap imageBitmap = (Bitmap) extras.get("data");
-                        if (ivProfilePicture != null && imageBitmap != null) {
-                            ivProfilePicture.setImageBitmap(imageBitmap);
-                            capturedPhotoBitmap = imageBitmap;
-                        }
-                    }
-                }
-            }
-        );
-    }
-
-    @Nullable
-    @Override
-    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
-            @Nullable Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.activity_profile, container, false);
-
-        ViewModelFactory factory = new ViewModelFactory(requireActivity().getApplication());
-        profileViewModel = new ViewModelProvider(this, factory).get(ProfileViewModel.class);
-        firebaseAuth = FirebaseAuth.getInstance();
-        locationFlowManager = new LocationFlowManager(requireContext(),
-            new LocationManager(),
-            new GeocoderService(),
-            new StudentRepository(requireContext()));
-
-        initializeViews(view);
-        observeViewModel();
-        setupListeners();
-
-        return view;
-    }
-
-    private void initializeViews(View view) {
-        tvProfileName = view.findViewById(R.id.tvProfileName);
-        tvGPADisplay = view.findViewById(R.id.tvGPADisplay);
-        tvLocationDisplay = view.findViewById(R.id.tvLocationDisplay);
-        tvEmailDisplay = view.findViewById(R.id.tvEmailDisplay);
-        tvCourseDisplay = view.findViewById(R.id.tvCourseDisplay);
-        tvCollegeDisplay = view.findViewById(R.id.tvCollegeDisplay);
-        tvContactDisplay = view.findViewById(R.id.tvContactDisplay);
-        etFullName = view.findViewById(R.id.etFullName);
-        etGPA = view.findViewById(R.id.etGPA);
-        etLocation = view.findViewById(R.id.etLocation);
-        etEmail = view.findViewById(R.id.etEmail);
-        ivProfilePicture = view.findViewById(R.id.ivProfilePicture);
-        btnChangePhoto = view.findViewById(R.id.btnChangePhoto);
-        btnUpdate = view.findViewById(R.id.btnUpdate);
-        btnExit = view.findViewById(R.id.btnExit);
-        btnUseCurrentLocation = view.findViewById(R.id.btnUseCurrentLocation);
-        progressBarLocation = view.findViewById(R.id.progressBarLocation);
-
-        etCollege = view.findViewById(R.id.etCollege);
-        etCourse = view.findViewById(R.id.etCourse);
-        etContactNumber = view.findViewById(R.id.etContactNumber);
-        btnThemeToggle = view.findViewById(R.id.btnThemeToggle);
-
-        // Initialize in view mode, disable edit until student data loads
-        setEditMode(false);
-        btnUpdate.setEnabled(false);
-    }
-
-    private void observeViewModel() {
-        profileViewModel.loadStudentData();
-
-        profileViewModel.getCurrentStudent().observe(getViewLifecycleOwner(), new Observer<Student>() {
-            @Override
-            public void onChanged(Student student) {
-                if (student != null) {
-                    currentStudent = student;
-                    isStudentLoaded = true;
-                    populateDisplayFields();
-                    populateEditFields();
-                    // Enable Edit button now that data is loaded
-                    if (btnUpdate != null) {
-                        btnUpdate.setEnabled(true);
-                    }
-                } else {
-                    isStudentLoaded = false;
-                    if (btnUpdate != null) {
-                        btnUpdate.setEnabled(false);
-                    }
-                }
-            }
-        });
-
-        profileViewModel.getUpdateSuccess().observe(getViewLifecycleOwner(), success -> {
-            if (success != null && success) {
-                populateDisplayFields();
-                setEditMode(false);
-            }
-        });
-
-        profileViewModel.getErrorMessage().observe(getViewLifecycleOwner(), error -> {
-            if (error != null && !error.isEmpty()) {
-                DialogManager.showErrorDialog(requireContext(), "Something went wrong", error);
-            }
-        });
-
-        profileViewModel.getLocationUpdateStatus().observe(getViewLifecycleOwner(), location -> {
-            if (location != null && !location.isEmpty()) {
-                etLocation.setText(location);
-                if (getView() != null) {
-                    DialogManager.showSuccessSnackbar(getView(), "Location updated to " + location);
-                }
-            }
-        });
-    }
-
-    private void populateDisplayFields() {
-        if (currentStudent != null) {
-            // Load profile photo from internal storage if available
-            loadProfilePhoto();
-            String fullName = currentStudent.getFirstName();
-            if (currentStudent.getMiddleInitial() != null && !currentStudent.getMiddleInitial().isEmpty()) {
-                fullName += " " + currentStudent.getMiddleInitial() + ". " + currentStudent.getLastName();
-            } else {
-                fullName += " " + currentStudent.getLastName();
-            }
-            tvProfileName.setText(fullName);
-            tvGPADisplay.setText("GPA: " + currentStudent.getGpa());
-            tvLocationDisplay.setText(currentStudent.getLocation());
-            tvEmailDisplay.setText(currentStudent.getEmail());
-
-            tvCourseDisplay.setText(currentStudent.getCourse() != null ? currentStudent.getCourse() : "Course / Program");
-            tvCollegeDisplay.setText(currentStudent.getCollege() != null ? currentStudent.getCollege() : "School / University");
-            tvContactDisplay.setText(currentStudent.getContactNumber() != null ? currentStudent.getContactNumber() : "Contact Number");
-
-            tvCourseDisplay.setVisibility(View.VISIBLE);
-            tvCollegeDisplay.setVisibility(View.VISIBLE);
-            tvContactDisplay.setVisibility(View.VISIBLE);
-        }
-    }
-
-    private void populateEditFields() {
-        if (currentStudent != null) {
-            String fullName = currentStudent.getFirstName() + " " + currentStudent.getLastName();
-            if (currentStudent.getMiddleInitial() != null && !currentStudent.getMiddleInitial().isEmpty()) {
-                fullName = currentStudent.getFirstName() + " " + currentStudent.getMiddleInitial() + ". " + currentStudent.getLastName();
-            }
-            etFullName.setText(fullName);
-            etGPA.setText(String.valueOf(currentStudent.getGpa()));
-            etLocation.setText(currentStudent.getLocation());
-            
-            String email = currentStudent.getEmail();
-            if (email == null || email.isEmpty()) {
-                FirebaseUser firebaseUser = firebaseAuth.getCurrentUser();
-                if (firebaseUser != null && firebaseUser.getEmail() != null) {
-                    email = firebaseUser.getEmail();
-                }
-            }
-            etEmail.setText(email);
-            
-            etCollege.setText(currentStudent.getCollege());
-            etCourse.setText(currentStudent.getCourse());
-            etContactNumber.setText(currentStudent.getContactNumber());
-        }
-    }
-
-    private void setupListeners() {
-        btnUpdate.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (isEditMode) {
-                    updateProfile();
-                } else {
-                    setEditMode(true);
-                }
-            }
-        });
-
-        btnExit.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                logout();
-            }
-        });
-
-        btnUseCurrentLocation.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                handleLocationButtonClick();
-            }
-        });
-
-        btnThemeToggle.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                toggleTheme();
-            }
-        });
-
-        btnChangePhoto.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                checkCameraPermission();
-            }
-        });
-    }
-
-    private void updateProfile() {
-        // Guard against saving when student data isn't loaded yet
-        if (!isStudentLoaded || currentStudent == null) {
-            DialogManager.showErrorDialog(requireContext(),
-                    "Please wait",
-                    "Your profile is still loading. Please try again in a moment.");
-            return;
-        }
-
-        String fullName = etFullName.getText().toString().trim();
-        String gpaStr = etGPA.getText().toString().trim();
-        String location = etLocation.getText().toString().trim();
-        String email = etEmail.getText().toString().trim();
-        String college = etCollege.getText().toString().trim();
-        String course = etCourse.getText().toString().trim();
-        String contactNumber = etContactNumber.getText().toString().trim();
-
-        // Save captured photo to internal storage if available
-        String photoPath = null;
-        if (capturedPhotoBitmap != null) {
-            photoPath = savePhotoToInternalStorage(capturedPhotoBitmap, currentStudent.getFirebaseUid());
-        }
-
-        profileViewModel.updateProfile(fullName, gpaStr, location, email, college, course, contactNumber, photoPath);
-    }
-
-    private String savePhotoToInternalStorage(Bitmap bitmap, String firebaseUid) {
-        try {
-            File directory = new File(requireContext().getFilesDir(), "profile_photos");
-            if (!directory.exists()) {
-                directory.mkdirs();
-            }
-            File photoFile = new File(directory, firebaseUid + "_profile.jpg");
-            FileOutputStream fos = new FileOutputStream(photoFile);
-            bitmap.compress(Bitmap.CompressFormat.JPEG, 90, fos);
-            fos.close();
-            return photoFile.getAbsolutePath();
-        } catch (IOException e) {
-            e.printStackTrace();
-            DialogManager.showErrorDialog(requireContext(),
-                    "Photo Save Failed",
-                    "We couldn't save your profile photo. Please try again or check your device storage.");
-            return null;
-        }
-    }
-
-    private void loadProfilePhoto() {
-        if (currentStudent != null && currentStudent.getProfilePhotoPath() != null) {
-            File photoFile = new File(currentStudent.getProfilePhotoPath());
-            if (photoFile.exists()) {
-                Bitmap bitmap = BitmapFactory.decodeFile(photoFile.getAbsolutePath());
-                if (bitmap != null && ivProfilePicture != null) {
-                    ivProfilePicture.setImageBitmap(bitmap);
-                }
-            }
-        }
-    }
-
-    private void logout() {
-        // Show logout confirmation dialog
-        LogoutConfirmationDialog logoutDialog = new LogoutConfirmationDialog();
-        logoutDialog.setLogoutConfirmationListener(new LogoutConfirmationDialog.LogoutConfirmationListener() {
-            @Override
-            public void onLogoutConfirmed() {
-                // User confirmed logout
-                profileViewModel.logout();
-                if (getView() != null) {
-                    DialogManager.showSuccessSnackbar(getView(), "You've been signed out");
-                }
-                requireActivity().finish();
-            }
-
-            @Override
-            public void onLogoutCancelled() {
-                // User cancelled logout - no action needed
-                // Dialog will be dismissed automatically
-            }
-        });
-        
-        logoutDialog.show(getParentFragmentManager(), "LogoutConfirmationDialog");
-    }
-
-    private void handleLocationButtonClick() {
-        if (profileViewModel.hasLocationPermissions()) {
-            fetchCurrentLocation();
-        } else {
-            profileViewModel.requestLocationPermissions(requireActivity(),
-                LocationConstants.LOCATION_PERMISSION_REQUEST_CODE);
-        }
-    }
-
-    private void showLocationPermissionDialog() {
-        locationFlowManager.checkAndRequestLocationPermission(requireActivity(), new LocationPermissionDialog.LocationPermissionCallback() {
-            @Override
-            public void onPermissionAllowed() {
-                fetchCurrentLocation();
-            }
-
-            @Override
-            public void onPermissionDenied() {
-                DialogManager.showErrorDialog(requireContext(),
-                        "Location Access Denied",
-                        "Without location permission, we can't automatically update your location. You can still enter it manually in your profile.");
-            }
-        });
-    }
-
-    private void fetchCurrentLocation() {
-        progressBarLocation.setVisibility(View.VISIBLE);
-        btnUseCurrentLocation.setEnabled(false);
-
-        profileViewModel.fetchCurrentLocation();
-
-        profileViewModel.getLocationUpdateStatus().observe(getViewLifecycleOwner(), location -> {
-            if (location != null) {
-                progressBarLocation.setVisibility(View.GONE);
-                btnUseCurrentLocation.setEnabled(true);
-            }
-        });
-
-        profileViewModel.getErrorMessage().observe(getViewLifecycleOwner(), error -> {
-            if (error != null && !error.isEmpty()) {
-                progressBarLocation.setVisibility(View.GONE);
-                btnUseCurrentLocation.setEnabled(true);
-                etLocation.setText(LocationConstants.DEFAULT_LOCATION);
-            }
-        });
-    }
-
-    private void toggleTheme() {
-        isDarkTheme = !isDarkTheme;
-        View rootView = getView();
-        if (rootView != null) {
-            if (isDarkTheme) {
-                rootView.setBackgroundColor(android.graphics.Color.parseColor("#001F3F"));
-            } else {
-                rootView.setBackgroundColor(android.graphics.Color.parseColor("#F5F5F5"));
-            }
-        }
-    }
-
-    private void checkCameraPermission() {
-        if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.CAMERA)
-                == PackageManager.PERMISSION_GRANTED) {
-            openCamera();
-        } else {
-            cameraPermissionLauncher.launch(Manifest.permission.CAMERA);
-        }
-    }
-
-    private void openCamera() {
-        Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-        try {
-            cameraLauncher.launch(takePictureIntent);
-        } catch (Exception e) {
-            DialogManager.showErrorDialog(requireContext(),
-                    "Camera Not Available",
-                    "We couldn't open your camera app. Please make sure you have a camera app installed.");
-        }
-    }
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
-        profileViewModel.handlePermissionResult(requestCode, permissions, grantResults);
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-    }
-
-    private void setEditMode(boolean editMode) {
-        isEditMode = editMode;
-        
-        View rootView = getView();
-        if (rootView == null) return;
-
-        // Toggle edit section visibility
-        LinearLayout editSection = rootView.findViewById(R.id.editSection);
-        if (editSection != null) {
-            editSection.setVisibility(editMode ? View.VISIBLE : View.GONE);
-        }
-
-        // Update button text
-        if (btnUpdate != null) {
-            btnUpdate.setText(editMode ? "Save Profile" : "Edit Profile");
-        }
-
-        // Toggle photo change button visibility
-        if (btnChangePhoto != null) {
-            btnChangePhoto.setVisibility(editMode ? View.VISIBLE : View.GONE);
-        }
-    }
-}
-</file>
-
 <file path="app/src/main/res/layout/activity_scholarshipdetails.xml">
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout
@@ -16575,119 +16072,508 @@ public class ScholarshipRepository {
 }
 </file>
 
-<file path="app/build.gradle.kts">
-import java.util.Properties
+<file path="app/src/main/java/com/example/iskolarphh/ui/ProfileFragment.java">
+package com.example.iskolarphh.ui;
 
-plugins {
-    alias(libs.plugins.android.application)
-    id("com.google.gms.google-services")
-}
+import android.Manifest;
+import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.os.Bundle;
+import android.provider.MediaStore;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.ImageButton;
+import android.widget.ImageView;
 
-android {
-    namespace = "com.example.iskolarphh"
-    compileSdk = 36 // Updated to a simpler syntax if possible, but keeping consistency
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 
-    // Explicitly set the compileSdk version as provided in the original file
-    compileSdk {
-        version = release(36) {
-            minorApiLevel = 1
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.example.iskolarphh.service.LocationFlowManager;
+import com.example.iskolarphh.service.LocationManager;
+import com.example.iskolarphh.service.GeocoderService;
+import com.example.iskolarphh.repository.StudentRepository;
+import android.widget.LinearLayout;
+import android.widget.ProgressBar;
+import android.widget.TextView;
+
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.core.content.ContextCompat;
+import androidx.fragment.app.Fragment;
+import androidx.lifecycle.ViewModelProvider;
+import androidx.lifecycle.Observer;
+
+import com.example.iskolarphh.R;
+import com.example.iskolarphh.callback.LocationCallback;
+import com.example.iskolarphh.database.entity.Student;
+import com.example.iskolarphh.di.ViewModelFactory;
+import com.example.iskolarphh.ui.LogoutConfirmationDialog;
+import com.example.iskolarphh.viewmodel.ProfileViewModel;
+import com.example.iskolarphh.ui.DialogManager;
+import com.example.iskolarphh.util.LocationConstants;
+
+public class ProfileFragment extends Fragment {
+
+    private ProfileViewModel profileViewModel;
+    private FirebaseAuth firebaseAuth;
+    private LocationFlowManager locationFlowManager;
+    private Student currentStudent;
+
+    private TextView tvProfileName;
+    private TextView tvGPADisplay;
+    private TextView tvLocationDisplay;
+    private TextView tvEmailDisplay;
+    private TextView tvCourseDisplay;
+    private TextView tvCollegeDisplay;
+    private TextView tvContactDisplay;
+    private ImageView ivProfilePicture;
+    private ImageView btnChangePhoto;
+    private EditText etFullName;
+    private EditText etGPA;
+    private EditText etLocation;
+    private EditText etEmail;
+    private EditText etCollege;
+    private EditText etCourse;
+    private EditText etContactNumber;
+    private Button btnUpdate;
+    private Button btnExit;
+    private ImageButton btnUseCurrentLocation;
+    private Button btnThemeToggle;
+    private ProgressBar progressBarLocation;
+
+    private boolean isEditMode = false;
+    private boolean isDarkTheme = false;
+    private boolean isStudentLoaded = false;
+
+    private ActivityResultLauncher<Intent> cameraLauncher;
+    private ActivityResultLauncher<String> cameraPermissionLauncher;
+    private Bitmap capturedPhotoBitmap;
+
+    @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        
+        // Register Camera Permission Launcher
+        cameraPermissionLauncher = registerForActivityResult(
+            new ActivityResultContracts.RequestPermission(),
+            isGranted -> {
+                if (isGranted) {
+                    openCamera();
+                } else {
+                    DialogManager.showErrorDialog(requireContext(),
+                            "Permission Needed",
+                            "Camera access is required to update your profile photo. Please enable it in your device settings.");
+                }
+            }
+        );
+
+        // Register Camera Launcher
+        cameraLauncher = registerForActivityResult(
+            new ActivityResultContracts.StartActivityForResult(),
+            result -> {
+                if (result.getResultCode() == android.app.Activity.RESULT_OK && result.getData() != null) {
+                    Bundle extras = result.getData().getExtras();
+                    if (extras != null) {
+                        Bitmap imageBitmap = (Bitmap) extras.get("data");
+                        if (ivProfilePicture != null && imageBitmap != null) {
+                            ivProfilePicture.setImageBitmap(imageBitmap);
+                            capturedPhotoBitmap = imageBitmap;
+                        }
+                    }
+                }
+            }
+        );
+    }
+
+    @Nullable
+    @Override
+    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
+            @Nullable Bundle savedInstanceState) {
+        View view = inflater.inflate(R.layout.activity_profile, container, false);
+
+        ViewModelFactory factory = new ViewModelFactory(requireActivity().getApplication());
+        profileViewModel = new ViewModelProvider(this, factory).get(ProfileViewModel.class);
+        firebaseAuth = FirebaseAuth.getInstance();
+        locationFlowManager = new LocationFlowManager(requireContext(),
+            new LocationManager(),
+            new GeocoderService(),
+            new StudentRepository(requireContext()));
+
+        initializeViews(view);
+        observeViewModel();
+        setupListeners();
+
+        return view;
+    }
+
+    private void initializeViews(View view) {
+        tvProfileName = view.findViewById(R.id.tvProfileName);
+        tvGPADisplay = view.findViewById(R.id.tvGPADisplay);
+        tvLocationDisplay = view.findViewById(R.id.tvLocationDisplay);
+        tvEmailDisplay = view.findViewById(R.id.tvEmailDisplay);
+        tvCourseDisplay = view.findViewById(R.id.tvCourseDisplay);
+        tvCollegeDisplay = view.findViewById(R.id.tvCollegeDisplay);
+        tvContactDisplay = view.findViewById(R.id.tvContactDisplay);
+        etFullName = view.findViewById(R.id.etFullName);
+        etGPA = view.findViewById(R.id.etGPA);
+        etLocation = view.findViewById(R.id.etLocation);
+        etEmail = view.findViewById(R.id.etEmail);
+        ivProfilePicture = view.findViewById(R.id.ivProfilePicture);
+        btnChangePhoto = view.findViewById(R.id.btnChangePhoto);
+        btnUpdate = view.findViewById(R.id.btnUpdate);
+        btnExit = view.findViewById(R.id.btnExit);
+        btnUseCurrentLocation = view.findViewById(R.id.btnUseCurrentLocation);
+        progressBarLocation = view.findViewById(R.id.progressBarLocation);
+
+        etCollege = view.findViewById(R.id.etCollege);
+        etCourse = view.findViewById(R.id.etCourse);
+        etContactNumber = view.findViewById(R.id.etContactNumber);
+        btnThemeToggle = view.findViewById(R.id.btnThemeToggle);
+
+        // Initialize in view mode, disable edit until student data loads
+        setEditMode(false);
+        btnUpdate.setEnabled(false);
+    }
+
+    private void observeViewModel() {
+        profileViewModel.loadStudentData();
+
+        profileViewModel.getCurrentStudent().observe(getViewLifecycleOwner(), new Observer<Student>() {
+            @Override
+            public void onChanged(Student student) {
+                if (student != null) {
+                    currentStudent = student;
+                    isStudentLoaded = true;
+                    populateDisplayFields();
+                    populateEditFields();
+                    // Enable Edit button now that data is loaded
+                    if (btnUpdate != null) {
+                        btnUpdate.setEnabled(true);
+                    }
+                } else {
+                    isStudentLoaded = false;
+                    if (btnUpdate != null) {
+                        btnUpdate.setEnabled(false);
+                    }
+                }
+            }
+        });
+
+        profileViewModel.getUpdateSuccess().observe(getViewLifecycleOwner(), success -> {
+            if (success != null && success) {
+                populateDisplayFields();
+                setEditMode(false);
+                DialogManager.showProfileSaveSuccess(requireContext(), getView());
+            }
+        });
+
+        profileViewModel.getErrorMessage().observe(getViewLifecycleOwner(), error -> {
+            if (error != null && !error.isEmpty()) {
+                DialogManager.showErrorDialog(requireContext(), "Something went wrong", error);
+            }
+        });
+
+        profileViewModel.getLocationUpdateStatus().observe(getViewLifecycleOwner(), location -> {
+            if (location != null && !location.isEmpty()) {
+                etLocation.setText(location);
+                if (getView() != null) {
+                    DialogManager.showSuccessSnackbar(getView(), "Location updated to " + location);
+                }
+            }
+        });
+    }
+
+    private void populateDisplayFields() {
+        if (currentStudent != null) {
+            // Load profile photo from internal storage if available
+            loadProfilePhoto();
+            String fullName = currentStudent.getFirstName();
+            if (currentStudent.getMiddleInitial() != null && !currentStudent.getMiddleInitial().isEmpty()) {
+                fullName += " " + currentStudent.getMiddleInitial() + ". " + currentStudent.getLastName();
+            } else {
+                fullName += " " + currentStudent.getLastName();
+            }
+            tvProfileName.setText(fullName);
+            tvGPADisplay.setText("GPA: " + currentStudent.getGpa());
+            tvLocationDisplay.setText(currentStudent.getLocation());
+            tvEmailDisplay.setText(currentStudent.getEmail());
+
+            tvCourseDisplay.setText(currentStudent.getCourse() != null ? currentStudent.getCourse() : "Course / Program");
+            tvCollegeDisplay.setText(currentStudent.getCollege() != null ? currentStudent.getCollege() : "School / University");
+            tvContactDisplay.setText(currentStudent.getContactNumber() != null ? currentStudent.getContactNumber() : "Contact Number");
+
+            tvCourseDisplay.setVisibility(View.VISIBLE);
+            tvCollegeDisplay.setVisibility(View.VISIBLE);
+            tvContactDisplay.setVisibility(View.VISIBLE);
         }
     }
 
-    defaultConfig {
-        applicationId = "com.example.iskolarphh"
-        minSdk = 24
-        targetSdk = 36
-        versionCode = 1
-        versionName = "1.0"
-
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-    }
-
-    buildTypes {
-        release {
-            isMinifyEnabled = false
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
-            )
+    private void populateEditFields() {
+        if (currentStudent != null) {
+            String fullName = currentStudent.getFirstName() + " " + currentStudent.getLastName();
+            if (currentStudent.getMiddleInitial() != null && !currentStudent.getMiddleInitial().isEmpty()) {
+                fullName = currentStudent.getFirstName() + " " + currentStudent.getMiddleInitial() + ". " + currentStudent.getLastName();
+            }
+            etFullName.setText(fullName);
+            etGPA.setText(String.valueOf(currentStudent.getGpa()));
+            etLocation.setText(currentStudent.getLocation());
+            
+            String email = currentStudent.getEmail();
+            if (email == null || email.isEmpty()) {
+                FirebaseUser firebaseUser = firebaseAuth.getCurrentUser();
+                if (firebaseUser != null && firebaseUser.getEmail() != null) {
+                    email = firebaseUser.getEmail();
+                }
+            }
+            etEmail.setText(email);
+            
+            etCollege.setText(currentStudent.getCollege());
+            etCourse.setText(currentStudent.getCourse());
+            etContactNumber.setText(currentStudent.getContactNumber());
         }
     }
-    buildFeatures {
-        buildConfig = true
+
+    private void setupListeners() {
+        btnUpdate.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (isEditMode) {
+                    updateProfile();
+                } else {
+                    setEditMode(true);
+                }
+            }
+        });
+
+        btnExit.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                logout();
+            }
+        });
+
+        btnUseCurrentLocation.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                handleLocationButtonClick();
+            }
+        });
+
+        btnThemeToggle.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                toggleTheme();
+            }
+        });
+
+        btnChangePhoto.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                checkCameraPermission();
+            }
+        });
     }
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
+
+    private void updateProfile() {
+        // Guard against saving when student data isn't loaded yet
+        if (!isStudentLoaded || currentStudent == null) {
+            DialogManager.showErrorDialog(requireContext(),
+                    "Please wait",
+                    "Your profile is still loading. Please try again in a moment.");
+            return;
+        }
+
+        String fullName = etFullName.getText().toString().trim();
+        String gpaStr = etGPA.getText().toString().trim();
+        String location = etLocation.getText().toString().trim();
+        String email = etEmail.getText().toString().trim();
+        String college = etCollege.getText().toString().trim();
+        String course = etCourse.getText().toString().trim();
+        String contactNumber = etContactNumber.getText().toString().trim();
+
+        // Save captured photo to internal storage if available
+        String photoPath = null;
+        if (capturedPhotoBitmap != null) {
+            photoPath = savePhotoToInternalStorage(capturedPhotoBitmap, currentStudent.getFirebaseUid());
+        }
+
+        profileViewModel.updateProfile(fullName, gpaStr, location, email, college, course, contactNumber, photoPath);
+    }
+
+    private String savePhotoToInternalStorage(Bitmap bitmap, String firebaseUid) {
+        try {
+            File directory = new File(requireContext().getFilesDir(), "profile_photos");
+            if (!directory.exists()) {
+                directory.mkdirs();
+            }
+            File photoFile = new File(directory, firebaseUid + "_profile.jpg");
+            FileOutputStream fos = new FileOutputStream(photoFile);
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 90, fos);
+            fos.close();
+            return photoFile.getAbsolutePath();
+        } catch (IOException e) {
+            e.printStackTrace();
+            DialogManager.showErrorDialog(requireContext(),
+                    "Photo Save Failed",
+                    "We couldn't save your profile photo. Please try again or check your device storage.");
+            return null;
+        }
+    }
+
+    private void loadProfilePhoto() {
+        if (currentStudent != null && currentStudent.getProfilePhotoPath() != null) {
+            File photoFile = new File(currentStudent.getProfilePhotoPath());
+            if (photoFile.exists()) {
+                Bitmap bitmap = BitmapFactory.decodeFile(photoFile.getAbsolutePath());
+                if (bitmap != null && ivProfilePicture != null) {
+                    ivProfilePicture.setImageBitmap(bitmap);
+                }
+            }
+        }
+    }
+
+    private void logout() {
+        // Show logout confirmation dialog
+        LogoutConfirmationDialog logoutDialog = new LogoutConfirmationDialog();
+        logoutDialog.setLogoutConfirmationListener(new LogoutConfirmationDialog.LogoutConfirmationListener() {
+            @Override
+            public void onLogoutConfirmed() {
+                // User confirmed logout
+                profileViewModel.logout();
+                if (getView() != null) {
+                    DialogManager.showSuccessSnackbar(getView(), "You've been signed out");
+                }
+                requireActivity().finish();
+            }
+
+            @Override
+            public void onLogoutCancelled() {
+                // User cancelled logout - no action needed
+                // Dialog will be dismissed automatically
+            }
+        });
+        
+        logoutDialog.show(getParentFragmentManager(), "LogoutConfirmationDialog");
+    }
+
+    private void handleLocationButtonClick() {
+        if (profileViewModel.hasLocationPermissions()) {
+            fetchCurrentLocation();
+        } else {
+            profileViewModel.requestLocationPermissions(requireActivity(),
+                LocationConstants.LOCATION_PERMISSION_REQUEST_CODE);
+        }
+    }
+
+    private void showLocationPermissionDialog() {
+        locationFlowManager.checkAndRequestLocationPermission(requireActivity(), new LocationPermissionDialog.LocationPermissionCallback() {
+            @Override
+            public void onPermissionAllowed() {
+                fetchCurrentLocation();
+            }
+
+            @Override
+            public void onPermissionDenied() {
+                DialogManager.showErrorDialog(requireContext(),
+                        "Location Access Denied",
+                        "Without location permission, we can't automatically update your location. You can still enter it manually in your profile.");
+            }
+        });
+    }
+
+    private void fetchCurrentLocation() {
+        progressBarLocation.setVisibility(View.VISIBLE);
+        btnUseCurrentLocation.setEnabled(false);
+
+        profileViewModel.fetchCurrentLocation();
+
+        profileViewModel.getLocationUpdateStatus().observe(getViewLifecycleOwner(), location -> {
+            if (location != null) {
+                progressBarLocation.setVisibility(View.GONE);
+                btnUseCurrentLocation.setEnabled(true);
+            }
+        });
+
+        profileViewModel.getErrorMessage().observe(getViewLifecycleOwner(), error -> {
+            if (error != null && !error.isEmpty()) {
+                progressBarLocation.setVisibility(View.GONE);
+                btnUseCurrentLocation.setEnabled(true);
+                etLocation.setText(LocationConstants.DEFAULT_LOCATION);
+            }
+        });
+    }
+
+    private void toggleTheme() {
+        isDarkTheme = !isDarkTheme;
+        View rootView = getView();
+        if (rootView != null) {
+            if (isDarkTheme) {
+                rootView.setBackgroundColor(android.graphics.Color.parseColor("#001F3F"));
+            } else {
+                rootView.setBackgroundColor(android.graphics.Color.parseColor("#F5F5F5"));
+            }
+        }
+    }
+
+    private void checkCameraPermission() {
+        if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.CAMERA)
+                == PackageManager.PERMISSION_GRANTED) {
+            openCamera();
+        } else {
+            cameraPermissionLauncher.launch(Manifest.permission.CAMERA);
+        }
+    }
+
+    private void openCamera() {
+        Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+        try {
+            cameraLauncher.launch(takePictureIntent);
+        } catch (Exception e) {
+            DialogManager.showErrorDialog(requireContext(),
+                    "Camera Not Available",
+                    "We couldn't open your camera app. Please make sure you have a camera app installed.");
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        profileViewModel.handlePermissionResult(requestCode, permissions, grantResults);
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+    }
+
+    private void setEditMode(boolean editMode) {
+        isEditMode = editMode;
+        
+        View rootView = getView();
+        if (rootView == null) return;
+
+        // Toggle edit section visibility
+        LinearLayout editSection = rootView.findViewById(R.id.editSection);
+        if (editSection != null) {
+            editSection.setVisibility(editMode ? View.VISIBLE : View.GONE);
+        }
+
+        // Update button text
+        if (btnUpdate != null) {
+            btnUpdate.setText(editMode ? "Save Profile" : "Edit Profile");
+        }
+
+        // Toggle photo change button visibility
+        if (btnChangePhoto != null) {
+            btnChangePhoto.setVisibility(editMode ? View.VISIBLE : View.GONE);
+        }
     }
 }
-
-// Configure the Java toolchain to ensure a valid JDK is used, 
-// avoiding references to missing or temporary extension JDKs.
-java {
-    toolchain {
-        languageVersion.set(JavaLanguageVersion.of(17))
-    }
-}
-
-dependencies {
-    implementation(libs.appcompat)
-    implementation(libs.material)
-    implementation(libs.activity)
-    implementation(libs.constraintlayout)
-    implementation(libs.coordinatorlayout)
-    implementation(libs.recyclerview)
-    testImplementation(libs.junit)
-    implementation(libs.androidx.room.runtime)
-    androidTestImplementation(libs.ext.junit)
-    annotationProcessor(libs.androidx.room.compiler)
-    androidTestImplementation(libs.espresso.core)
-    
-    // Firebase
-    implementation(platform("com.google.firebase:firebase-bom:32.7.0"))
-    implementation("com.google.firebase:firebase-auth")
-
-    // Google Play Services Location
-    implementation("com.google.android.gms:play-services-location:21.0.1")
-
-    // Retrofit & Networking
-    implementation(libs.retrofit)
-    implementation(libs.retrofit.gson)
-    implementation(libs.okhttp)
-    implementation(libs.okhttp.logging)
-    implementation(libs.gson)
-    implementation(libs.markwon.core)
-    implementation(libs.markwon.strikethrough)
-    implementation(libs.markwon.tables)
-
-    // Glide for image loading
-    implementation(libs.glide)
-    annotationProcessor(libs.glide.compiler)
-
-    // LeakCanary for memory leak detection (debug only)
-    // Temporarily disabled due to main thread blocking during startup
-    // debugImplementation(libs.leakcanary.android)
-
-    // Unit Testing
-    testImplementation("org.mockito:mockito-core:5.7.0")
-    testImplementation("org.mockito:mockito-inline:5.2.0")
-    testImplementation("org.robolectric:robolectric:4.11.1")
-    testImplementation("androidx.test:core:1.5.0")
-    testImplementation("androidx.arch.core:core-testing:2.2.0")
-}
-
-// Get API configuration from local.properties
-val localProperties = Properties()
-val localPropertiesFile = rootProject.file("local.properties")
-if (localPropertiesFile.exists()) {
-    localProperties.load(localPropertiesFile.inputStream())
-}
-android.defaultConfig.buildConfigField("String", "LONGCAT_API_KEY", "\"${localProperties.getProperty("LONGCAT_API_KEY", "")}\"")
-android.defaultConfig.buildConfigField("String", "LONGCAT_API_BASE_URL", "\"${localProperties.getProperty("LONGCAT_API_BASE_URL", "https://api.example.com")}\"")
-
-// Supabase Configuration
-android.defaultConfig.buildConfigField("String", "SUPABASE_URL", "\"${localProperties.getProperty("SUPABASE_URL", "")}\"")
-android.defaultConfig.buildConfigField("String", "SUPABASE_PUBLISHABLE_KEY", "\"${localProperties.getProperty("SUPABASE_PUBLISHABLE_KEY", "")}\"")
 </file>
 
 <file path="app/src/main/java/com/example/iskolarphh/ui/CatalogFragment.java">
@@ -16876,6 +16762,150 @@ public class CatalogFragment extends Fragment {
 
 
 }
+</file>
+
+<file path="app/build.gradle.kts">
+import java.util.Properties
+
+plugins {
+    alias(libs.plugins.android.application)
+    id("com.google.gms.google-services")
+}
+
+// Get API configuration from local.properties
+val localProperties = Properties()
+val localPropertiesFile = rootProject.file("local.properties")
+if (localPropertiesFile.exists()) {
+    localProperties.load(localPropertiesFile.inputStream())
+}
+
+android {
+    namespace = "com.example.iskolarphh"
+    compileSdk = 36 // Updated to a simpler syntax if possible, but keeping consistency
+
+    // Explicitly set the compileSdk version as provided in the original file
+    compileSdk {
+        version = release(36) {
+            minorApiLevel = 1
+        }
+    }
+
+    defaultConfig {
+        applicationId = "com.example.iskolarphh"
+        minSdk = 24
+        targetSdk = 36
+        versionCode = 1
+        versionName = "1.0"
+
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    signingConfigs {
+        create("release") {
+            val keystoreFile = file("../keystore.jks")
+            if (keystoreFile.exists()) {
+                storeFile = keystoreFile
+                storePassword = localProperties.getProperty("KEYSTORE_PASSWORD", "")
+                keyAlias = localProperties.getProperty("KEY_ALIAS", "")
+                keyPassword = localProperties.getProperty("KEY_PASSWORD", "")
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            val keystoreFile = file("../keystore.jks")
+            if (keystoreFile.exists()) {
+                signingConfig = signingConfigs.getByName("release")
+            }
+            isMinifyEnabled = false
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
+        }
+    }
+    
+    // Configure custom APK naming
+    androidComponents {
+        onVariants { variant ->
+            variant.outputs.forEach { output ->
+                val versionName = defaultConfig.versionName
+                val buildType = variant.buildType
+                output.outputFileName.set("ISKOLARPH-v${versionName}-${buildType}.apk")
+            }
+        }
+    }
+    buildFeatures {
+        buildConfig = true
+    }
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+}
+
+// Configure the Java toolchain to ensure a valid JDK is used, 
+// avoiding references to missing or temporary extension JDKs.
+java {
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(17))
+    }
+}
+
+dependencies {
+    implementation(libs.appcompat)
+    implementation(libs.material)
+    implementation(libs.activity)
+    implementation(libs.constraintlayout)
+    implementation(libs.coordinatorlayout)
+    implementation(libs.recyclerview)
+    testImplementation(libs.junit)
+    implementation(libs.androidx.room.runtime)
+    androidTestImplementation(libs.ext.junit)
+    annotationProcessor(libs.androidx.room.compiler)
+    androidTestImplementation(libs.espresso.core)
+    
+    // Firebase
+    implementation(platform("com.google.firebase:firebase-bom:32.7.0"))
+    implementation("com.google.firebase:firebase-auth")
+
+    // Google Play Services Location
+    implementation("com.google.android.gms:play-services-location:21.0.1")
+
+    // Retrofit & Networking
+    implementation(libs.retrofit)
+    implementation(libs.retrofit.gson)
+    implementation(libs.okhttp)
+    implementation(libs.okhttp.logging)
+    implementation(libs.gson)
+    implementation(libs.markwon.core)
+    implementation(libs.markwon.strikethrough)
+    implementation(libs.markwon.tables)
+
+    // Glide for image loading
+    implementation(libs.glide)
+    annotationProcessor(libs.glide.compiler)
+
+    // LeakCanary for memory leak detection (debug only)
+    // Temporarily disabled due to main thread blocking during startup
+    // debugImplementation(libs.leakcanary.android)
+
+    // Unit Testing
+    testImplementation("org.mockito:mockito-core:5.7.0")
+    testImplementation("org.mockito:mockito-inline:5.2.0")
+    testImplementation("org.robolectric:robolectric:4.11.1")
+    testImplementation("androidx.test:core:1.5.0")
+    testImplementation("androidx.arch.core:core-testing:2.2.0")
+}
+
+// API Configuration
+android.defaultConfig.buildConfigField("String", "LONGCAT_API_KEY", "\"${localProperties.getProperty("LONGCAT_API_KEY", "")}\"")
+android.defaultConfig.buildConfigField("String", "LONGCAT_API_BASE_URL", "\"${localProperties.getProperty("LONGCAT_API_BASE_URL", "https://api.example.com")}\"")
+
+// Supabase Configuration
+android.defaultConfig.buildConfigField("String", "SUPABASE_URL", "\"${localProperties.getProperty("SUPABASE_URL", "")}\"")
+android.defaultConfig.buildConfigField("String", "SUPABASE_PUBLISHABLE_KEY", "\"${localProperties.getProperty("SUPABASE_PUBLISHABLE_KEY", "")}\"")
 </file>
 
 <file path="app/src/main/res/layout/activity_catalog.xml">

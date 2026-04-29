@@ -58,6 +58,17 @@ android {
             )
         }
     }
+    
+    // Configure custom APK naming
+    androidComponents {
+        onVariants { variant ->
+            variant.outputs.forEach { output ->
+                val versionName = defaultConfig.versionName
+                val buildType = variant.buildType
+                output.outputFileName.set("ISKOLARPH-v${versionName}-${buildType}.apk")
+            }
+        }
+    }
     buildFeatures {
         buildConfig = true
     }
