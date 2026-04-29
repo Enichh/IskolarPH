@@ -112,28 +112,13 @@ public class SignupViewModel extends AndroidViewModel {
                             String middleInitial = nameParts[1];
                             String lastName = nameParts[2];
 
-                            // Create student record with Firebase UID using 6-argument constructor
-                            Student student = new Student(
-                                    user.getUid(),
-                                    firstName,
-                                    lastName,
-                                    middleInitial,
-                                    "", // location - will be filled later
-                                    0.0  // gpa - will be filled later
-                            );
+                            // Store user data temporarily for insertion after verification
+                            // Student will be inserted into Room database AFTER Supabase verification succeeds
+                            // This prevents unverified users from being stored in the database
 
-                            // Set email for local database
-                            student.setEmail(email);
-
-                            // Save to Room database with callback
-                            studentRepository.insert(student, id -> {
-                                // Save privacy consent for Philippine DPA compliance
-                                savePrivacyConsent(user.getUid(), basicConsentGiven, locationConsentGiven);
-
-                                // Run on UI thread
-                                new Handler(Looper.getMainLooper()).post(() -> {
-                                    signupState.postValue(SignupState.SUCCESS);
-                                });
+                            // Run on UI thread to signal success and navigate to verification
+                            new Handler(Looper.getMainLooper()).post(() -> {
+                                signupState.postValue(SignupState.SUCCESS);
                             });
                         }
                     } else {

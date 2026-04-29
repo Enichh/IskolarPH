@@ -20,6 +20,10 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.example.iskolarphh.service.SupabaseVerificationService;
 import com.example.iskolarphh.ui.DialogManager;
 import com.example.iskolarphh.utils.NetworkUtils;
+import com.example.iskolarphh.database.entity.Student;
+import com.example.iskolarphh.repository.StudentRepository;
+import com.example.iskolarphh.repository.PrivacyConsentRepository;
+import com.example.iskolarphh.BuildConfig;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
 import com.google.firebase.auth.FirebaseAuth;
@@ -36,10 +40,19 @@ public class EmailVerificationActivity extends AppCompatActivity {
     private static final long RESEND_COOLDOWN_MS = 60000; // 60 seconds cooldown
     private static final int CODE_EXPIRY_SECONDS = 300; // 5 minutes
     private static final long SESSION_DURATION_MS = 24 * 60 * 60 * 1000; // 24 hours
+    private static final String PRIVACY_POLICY_VERSION = "1.0";
 
     private FirebaseAuth mAuth;
     private SupabaseVerificationService verificationService;
     private SharedPreferences prefs;
+    private StudentRepository studentRepository;
+    private PrivacyConsentRepository privacyConsentRepository;
+
+    // User data for registration flow
+    private String fullName;
+    private String email;
+    private boolean basicConsent;
+    private boolean locationConsent;
 
     private TextView tvEmail;
     private TextView tvStatus;
@@ -64,6 +77,14 @@ public class EmailVerificationActivity extends AppCompatActivity {
         mAuth = FirebaseAuth.getInstance();
         verificationService = new SupabaseVerificationService(this);
         prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        studentRepository = new StudentRepository(getApplication());
+        privacyConsentRepository = new PrivacyConsentRepository(getApplication());
+
+        // Get user data from intent (for registration flow)
+        fullName = getIntent().getStringExtra("full_name");
+        email = getIntent().getStringExtra("email");
+        basicConsent = getIntent().getBooleanExtra("basic_consent", false);
+        locationConsent = getIntent().getBooleanExtra("location_consent", false);
 
         // Initialize views
         initViews();
@@ -270,9 +291,15 @@ public class EmailVerificationActivity extends AppCompatActivity {
                             if ("login".equals(verificationType)) {
                                 cacheLoginSession(currentEmail);
                             }
-                            
+
+                            // Insert user into Room database for registration flow
+                            // This happens AFTER Supabase verification succeeds
+                            if ("registration".equals(verificationType) && fullName != null && email != null) {
+                                insertUserAfterVerification();
+                            }
+
                             updateVerificationStatus(true);
-                            
+
                             String successTitle = "registration".equals(verificationType)
                                     ? "Email Verified!"
                                     : "Login Complete!";
@@ -285,7 +312,9 @@ public class EmailVerificationActivity extends AppCompatActivity {
 
                             // Auto-navigate to main app after successful verification
                             new android.os.Handler().postDelayed(() -> {
-                                navigateToMain();
+                                if (!isFinishing() && !isDestroyed()) {
+                                    navigateToMain();
+                                }
                             }, 1500); // 1.5 second delay to show success message
 
                             // Cancel expiry timer
@@ -454,5 +483,94 @@ public class EmailVerificationActivity extends AppCompatActivity {
         if (codeExpiryTimer != null) {
             codeExpiryTimer.cancel();
         }
+        // Shutdown repository executors to prevent thread leaks
+        if (studentRepository != null) {
+            studentRepository.shutdown();
+        }
+        if (privacyConsentRepository != null) {
+            privacyConsentRepository.shutdown();
+        }
+    }
+
+    /**
+     * Insert user into Room database after successful Supabase verification
+     */
+    private void insertUserAfterVerification() {
+        FirebaseUser user = mAuth.getCurrentUser();
+        if (user == null || fullName == null || email == null) {
+            android.util.Log.e(TAG, "Cannot insert user: missing data");
+            return;
+        }
+
+        // Parse full name
+        String[] nameParts = parseFullName(fullName);
+        String firstName = nameParts[0];
+        String middleInitial = nameParts[1];
+        String lastName = nameParts[2];
+
+        // Create student record with Firebase UID
+        Student student = new Student(
+                user.getUid(),
+                firstName,
+                lastName,
+                middleInitial,
+                "", // location - will be filled later
+                0.0  // gpa - will be filled later
+        );
+
+        // Set email for local database
+        student.setEmail(email);
+
+        // Save to Room database with callback
+        studentRepository.insert(student, id -> {
+            // Save privacy consent for Philippine DPA compliance
+            savePrivacyConsent(user.getUid(), basicConsent, locationConsent);
+            android.util.Log.d(TAG, "User inserted into database after verification with ID: " + id);
+        });
+    }
+
+    /**
+     * Parse full name into first name, middle initial, and last name
+     */
+    private String[] parseFullName(String fullName) {
+        String[] result = new String[3];
+        result[0] = ""; // firstName
+        result[1] = ""; // middleInitial
+        result[2] = ""; // lastName
+
+        if (fullName == null || fullName.trim().isEmpty()) {
+            return result;
+        }
+
+        String[] parts = fullName.trim().split("\\s+");
+
+        if (parts.length == 1) {
+            result[0] = parts[0];
+        } else if (parts.length == 2) {
+            result[0] = parts[0];
+            result[2] = parts[1];
+        } else {
+            result[0] = parts[0];
+            result[2] = parts[parts.length - 1];
+            result[1] = String.valueOf(parts[1].charAt(0));
+        }
+
+        return result;
+    }
+
+    /**
+     * Save privacy consent record for Philippine Data Privacy Act (RA 10173) compliance.
+     */
+    private void savePrivacyConsent(String firebaseUid, boolean basicConsent, boolean locationConsent) {
+        privacyConsentRepository.saveConsent(
+                firebaseUid,
+                basicConsent,
+                locationConsent,
+                BuildConfig.VERSION_NAME,
+                PRIVACY_POLICY_VERSION,
+                consentId -> {
+                    android.util.Log.d(TAG, "Privacy consent saved with ID: " + consentId);
+                }
+        );
     }
 }

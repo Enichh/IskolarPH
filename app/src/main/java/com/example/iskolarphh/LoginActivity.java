@@ -33,6 +33,9 @@ public class LoginActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.login);
 
+        // Clear Firebase Auth on fresh install to prevent auto-login
+        clearFirebaseAuthOnFreshInstall();
+
         ViewModelFactory factory = new ViewModelFactory(getApplication());
         loginViewModel = new ViewModelProvider(this, factory).get(LoginViewModel.class);
 
@@ -164,6 +167,19 @@ public class LoginActivity extends AppCompatActivity {
         if (hasSession && !sessionEmail.isEmpty() && (currentTime - sessionTimestamp) < sessionDuration) {
             etEmail.setText(sessionEmail);
             Log.d(TAG, "Prefilled email from cache: " + sessionEmail);
+        }
+    }
+
+    private void clearFirebaseAuthOnFreshInstall() {
+        SharedPreferences prefs = getSharedPreferences("InstallPrefs", Context.MODE_PRIVATE);
+        boolean isFirstLaunch = prefs.getBoolean("is_first_launch", true);
+        
+        if (isFirstLaunch) {
+            FirebaseAuth.getInstance().signOut();
+            SharedPreferences.Editor editor = prefs.edit();
+            editor.putBoolean("is_first_launch", false);
+            editor.apply();
+            Log.d(TAG, "Fresh install detected, Firebase Auth cleared");
         }
     }
     

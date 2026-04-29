@@ -71,7 +71,9 @@ public class SignupActivity extends AppCompatActivity {
                             "Welcome to IskolarPH!",
                             "Your account has been created. Please check your email to verify your account.");
                     new Handler(Looper.getMainLooper()).postDelayed(() -> {
-                        navigateToEmailVerification();
+                        if (!isFinishing() && !isDestroyed()) {
+                            navigateToEmailVerification();
+                        }
                     }, 1500); // Wait for the dialog to auto-dismiss before navigating
                     break;
                 case ERROR:
@@ -129,8 +131,17 @@ public class SignupActivity extends AppCompatActivity {
 
 
     private void navigateToEmailVerification() {
+        String fullName = etFullName.getText().toString().trim();
+        String email = etEmail.getText().toString().trim();
+        boolean basicConsent = cbBasicConsent.isChecked();
+        boolean locationConsent = cbLocationConsent.isChecked();
+
         Intent intent = new Intent(SignupActivity.this, EmailVerificationActivity.class);
         intent.putExtra("verification_type", "registration");
+        intent.putExtra("full_name", fullName);
+        intent.putExtra("email", email);
+        intent.putExtra("basic_consent", basicConsent);
+        intent.putExtra("location_consent", locationConsent);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         startActivity(intent);
         finish();
