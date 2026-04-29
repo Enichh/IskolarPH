@@ -1,6 +1,10 @@
 # ISKOLARPH
 
+<div align="center">
+
 ![ISKOLARPH Logo](logo_iskolar_ph.svg)
+
+</div>
 
 A comprehensive Android scholarship finder app designed specifically for Filipino students.
 
